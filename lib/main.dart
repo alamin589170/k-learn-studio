@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'vocab.dart';
+import 'pages.dart';
 
 void main() => runApp(const KLearnApp());
 
