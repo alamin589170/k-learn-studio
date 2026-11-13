@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'vocab.dart';
 
 void main() => runApp(const KLearnApp());
 
@@ -102,7 +103,9 @@ class HomePage extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => ComingSoonPage(feature: f)),
+              MaterialPageRoute(
+                  builder: (_) =>
+                      vocabPageFor(i) ?? ComingSoonPage(feature: f)),
             ),
             child: Container(
               padding: const EdgeInsets.all(14),
