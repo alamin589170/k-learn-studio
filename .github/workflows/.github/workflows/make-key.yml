@@ -1,1 +1,19 @@
-.github/workflows/make-key.yml
+name: Make Keystore
+on: workflow_dispatch
+jobs:
+  make:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate keystore
+        run: |
+          PASS=$(openssl rand -hex 12)
+          keytool -genkeypair -v -keystore klearn.jks \
+            -alias klearn -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass "$PASS" -keypass "$PASS" \
+            -dname "CN=K-Learn Studio, O=KLearn, C=BD"
+          echo "KS_PASS=$PASS" > keyinfo.txt
+          echo "KEYSTORE_B64=$(base64 -w 0 klearn.jks)" >> keyinfo.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: keyinfo
+          path: keyinfo.txt
