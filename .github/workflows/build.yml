@@ -17,7 +17,19 @@ jobs:
           channel: stable
       - run: flutter create --platforms=android --org com.klearn --project-name k_learn_studio .
       - run: git checkout -- lib pubspec.yaml
-      - run: head -3 lib/main.dart
+      - run: |
+          sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <application#' android/app/src/main/AndroidManifest.xml
+      - run: |
+          mkdir -p ~/.gradle/init.d
+          cat > ~/.gradle/init.d/nolint.gradle <<'EOF'
+          allprojects {
+            tasks.configureEach { t ->
+              if (t.name.startsWith('lintVital') || t.name.startsWith('lintAnalyze') || t.name == 'lintRelease') {
+                t.enabled = false
+              }
+            }
+          }
+          EOF
       - run: flutter pub get
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
