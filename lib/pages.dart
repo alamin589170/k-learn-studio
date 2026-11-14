@@ -4,6 +4,7 @@ import 'flashcards.dart';
 import 'quiz.dart';
 import 'revision.dart';
 import 'progress.dart';
+import 'planner.dart';
 
 export 'vocab.dart' hide vocabPageFor;
 
@@ -12,5 +13,6 @@ Widget? vocabPageFor(int i) {
   if (i == 8) return const QuizPage();
   if (i == 11) return const RevisionPage();
   if (i == 15) return const ProgressPage();
+  if (i == 16) return const PlannerPage();
   return v.vocabPageFor(i);
 }
