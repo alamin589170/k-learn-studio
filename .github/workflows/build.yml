@@ -32,7 +32,21 @@ jobs:
           EOF
       - run: flutter pub get
       - run: flutter build apk --release
+      - name: Sign APK
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          KS_PASS: ${{ secrets.KS_PASS }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$KS_PASS" ]; then
+            echo "ERROR: KEYSTORE_B64 or KS_PASS secret is missing"
+            exit 1
+          fi
+          echo "$KEYSTORE_B64" | base64 -d > klearn.jks
+          APKSIGNER=$(ls $ANDROID_HOME/build-tools/*/apksigner | sort -V | tail -1)
+          cp build/app/outputs/flutter-apk/app-release.apk K-Learn-Studio.apk
+          $APKSIGNER sign --ks klearn.jks --ks-key-alias klearn --ks-pass env:KS_PASS --key-pass env:KS_PASS K-Learn-Studio.apk
+          $APKSIGNER verify --print-certs K-Learn-Studio.apk
       - uses: actions/upload-artifact@v4
         with:
           name: K-Learn-Studio-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: K-Learn-Studio.apk
