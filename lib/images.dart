@@ -12,7 +12,7 @@ class Images {
 
   static Future<File> _mapFile() async {
     final d = await getApplicationDocumentsDirectory();
-    return File('${d.path}/images.json');
+    return File('${d.path}/images2.json');
   }
 
   static Future<void> _load() async {
@@ -60,36 +60,58 @@ class Images {
     return q;
   }
 
-  static Future<List<String>> searchUrls(String q) async {
-    if (q.trim().isEmpty) return [];
+  static List<String> _thumbs(dynamic pagesObj) {
+    final out = <String>[];
+    if (pagesObj is! Map) return out;
+    final list = pagesObj.values.toList();
+    list.sort((a, b) =>
+        ((a['index'] ?? 99) as int).compareTo((b['index'] ?? 99) as int));
+    for (final p in list) {
+      final t = p['thumbnail']?['source'];
+      if (t is String && !t.toLowerCase().contains('.svg')) out.add(t);
+    }
+    return out;
+  }
+
+  static Future<List<String>> _call(Map<String, String> params) async {
     try {
-      final uri = Uri.https('en.wikipedia.org', '/w/api.php', {
-        'action': 'query',
-        'generator': 'search',
-        'gsrsearch': q,
-        'gsrlimit': '8',
-        'prop': 'pageimages',
-        'piprop': 'thumbnail',
-        'pithumbsize': '700',
-        'format': 'json',
-      });
+      final uri = Uri.https('en.wikipedia.org', '/w/api.php', params);
       final r =
           await http.get(uri, headers: _ua).timeout(const Duration(seconds: 12));
       if (r.statusCode != 200) return [];
-      final j = jsonDecode(r.body) as Map<String, dynamic>;
-      final pages = ((j['query']?['pages'] as Map?)?.values.toList()) ?? [];
-      pages.sort((a, b) =>
-          (((a as Map)['index'] ?? 99) as int)
-              .compareTo(((b as Map)['index'] ?? 99) as int));
-      final out = <String>[];
-      for (final p in pages) {
-        final t = (p as Map)['thumbnail']?['source'];
-        if (t is String) out.add(t);
-      }
-      return out;
+      final j = jsonDecode(r.body);
+      return _thumbs(j['query']?['pages']);
     } catch (_) {
       return [];
     }
+  }
+
+  static Future<List<String>> searchUrls(String q) async {
+    if (q.trim().isEmpty) return [];
+    final exact = await _call({
+      'action': 'query',
+      'titles': q,
+      'redirects': '1',
+      'prop': 'pageimages',
+      'piprop': 'thumbnail',
+      'pithumbsize': '700',
+      'format': 'json',
+    });
+    final found = await _call({
+      'action': 'query',
+      'generator': 'search',
+      'gsrsearch': q,
+      'gsrlimit': '8',
+      'prop': 'pageimages',
+      'piprop': 'thumbnail',
+      'pithumbsize': '700',
+      'format': 'json',
+    });
+    final out = <String>[];
+    for (final u in [...exact, ...found]) {
+      if (!out.contains(u)) out.add(u);
+    }
+    return out;
   }
 
   static Future<String?> _download(int id, String url) async {
