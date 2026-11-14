@@ -31,7 +31,10 @@ jobs:
           }
           EOF
       - run: flutter pub get
-      - run: flutter build apk --release
+      - name: Build release APK
+        env:
+          PIXABAY_KEY: ${{ secrets.PIXABAY_KEY }}
+        run: flutter build apk --release --dart-define=PIXABAY_KEY=$PIXABAY_KEY
       - name: Sign APK
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
