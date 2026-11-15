@@ -20,6 +20,8 @@ jobs:
       - run: |
           sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <application#' android/app/src/main/AndroidManifest.xml
       - run: |
+          sed -i 's#<queries>#<queries>\n        <intent><action android:name="android.intent.action.VIEW"/><data android:scheme="https"/></intent>#' android/app/src/main/AndroidManifest.xml
+      - run: |
           mkdir -p ~/.gradle/init.d
           cat > ~/.gradle/init.d/nolint.gradle <<'EOF'
           allprojects {
