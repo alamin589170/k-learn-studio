@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'pages.dart';
+import 'settings.dart';
 
 void main() => runApp(const KLearnApp());
 
@@ -43,29 +44,52 @@ class KLearnApp extends StatefulWidget {
 }
 
 class _KLearnAppState extends State<KLearnApp> {
-  ThemeMode mode = ThemeMode.light;
+  @override
+  void initState() {
+    super.initState();
+    AppSettings.load().catchError((_) {});
+  }
 
-  void toggle() => setState(() {
-        mode = mode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
-      });
+  void toggle() {
+    AppSettings.setMode(AppSettings.mode.value == ThemeMode.dark
+        ? ThemeMode.light
+        : ThemeMode.dark);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'K-Learn Studio',
-      debugShowCheckedModeBanner: false,
-      themeMode: mode,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: const Color(0xFF6C5CE7),
-        brightness: Brightness.light,
+    return ValueListenableBuilder<int>(
+      valueListenable: AppSettings.seed,
+      builder: (c1, seed, _) => ValueListenableBuilder<ThemeMode>(
+        valueListenable: AppSettings.mode,
+        builder: (c2, mode, __) => ValueListenableBuilder<double>(
+          valueListenable: AppSettings.textScale,
+          builder: (c3, scale, ___) => MaterialApp(
+            title: 'K-Learn Studio',
+            debugShowCheckedModeBanner: false,
+            themeMode: mode,
+            theme: ThemeData(
+              useMaterial3: true,
+              colorSchemeSeed: Color(seed),
+              brightness: Brightness.light,
+            ),
+            darkTheme: ThemeData(
+              useMaterial3: true,
+              colorSchemeSeed: Color(seed),
+              brightness: Brightness.dark,
+            ),
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: TextScaler.linear(scale)),
+              child: child!,
+            ),
+            home: HomePage(
+              onToggle: toggle,
+              isDark: mode == ThemeMode.dark,
+            ),
+          ),
+        ),
       ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: const Color(0xFF6C5CE7),
-        brightness: Brightness.dark,
-      ),
-      home: HomePage(onToggle: toggle, isDark: mode == ThemeMode.dark),
     );
   }
 }
