@@ -38,12 +38,15 @@ class Word {
 }
 
 class Db {
-  static Database? _db;
+  static Future<Database>? _opening;
 
-  static Future<Database> get() async {
-    if (_db != null) return _db!;
+  static Future<Database> get() {
+    return _opening ??= _open();
+  }
+
+  static Future<Database> _open() async {
     final path = p.join(await getDatabasesPath(), 'klearn.db');
-    _db = await openDatabase(path, version: 1, onCreate: (db, v) async {
+    final db = await openDatabase(path, version: 1, onCreate: (db, v) async {
       await db.execute(
           'CREATE TABLE words(id INTEGER PRIMARY KEY AUTOINCREMENT, ko TEXT, pron TEXT, bn TEXT, en TEXT, ex TEXT, saved INTEGER DEFAULT 0)');
       final batch = db.batch();
@@ -59,7 +62,47 @@ class Db {
       }
       await batch.commit(noResult: true);
     });
-    return _db!;
+    try {
+      await _syncSeed(db);
+    } catch (_) {}
+    return db;
+  }
+
+  static Future<void> _syncSeed(Database db) async {
+    await db.execute(
+        'CREATE TABLE IF NOT EXISTS seed_state(ko TEXT PRIMARY KEY)');
+    final done = await db.query('seed_state', columns: ['ko']);
+    final doneSet = <String>{};
+    for (final m in done) {
+      doneSet.add((m['ko'] ?? '') as String);
+    }
+    final have = await db.query('words', columns: ['ko']);
+    final haveSet = <String>{};
+    for (final m in have) {
+      haveSet.add((m['ko'] ?? '') as String);
+    }
+    final batch = db.batch();
+    var any = false;
+    for (final r in allWords) {
+      final ko = r[0];
+      if (doneSet.contains(ko)) continue;
+      any = true;
+      doneSet.add(ko);
+      if (!haveSet.contains(ko)) {
+        haveSet.add(ko);
+        batch.insert('words', {
+          'ko': r[0],
+          'pron': r[1],
+          'bn': r[2],
+          'en': r[3],
+          'ex': r[4],
+          'saved': 0,
+        });
+      }
+      batch.insert('seed_state', {'ko': ko},
+          conflictAlgorithm: ConflictAlgorithm.ignore);
+    }
+    if (any) await batch.commit(noResult: true);
   }
 
   static Future<List<Word>> search(String q, {bool savedOnly = false}) async {
