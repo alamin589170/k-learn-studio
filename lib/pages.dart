@@ -6,6 +6,7 @@ import 'revision.dart';
 import 'progress.dart';
 import 'planner.dart';
 import 'hub.dart';
+import 'settings.dart';
 
 export 'vocab.dart' hide vocabPageFor;
 
@@ -16,5 +17,6 @@ Widget? vocabPageFor(int i) {
   if (i == 15) return const ProgressPage();
   if (i == 16) return const PlannerPage();
   if (i == 17) return const HubPage();
+  if (i == 21) return const SettingsPage();
   return v.vocabPageFor(i);
 }
