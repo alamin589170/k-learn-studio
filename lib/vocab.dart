@@ -3,7 +3,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 import 'words_data.dart';
-
+import 'settings.dart';
 class Word {
   int? id;
   String ko, pron, bn, en, ex;
@@ -145,7 +145,7 @@ final FlutterTts _tts = FlutterTts();
 Future<void> speakKorean(String text) async {
   try {
     await _tts.setLanguage('ko-KR');
-    await _tts.setSpeechRate(0.4);
+    await _tts.setSpeechRate(AppSettings.speech.value);
     await _tts.speak(text);
   } catch (_) {}
 }
