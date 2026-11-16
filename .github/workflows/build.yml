@@ -32,6 +32,11 @@ jobs:
             }
           }
           EOF
+                - name: Show android files
+        run: |
+          ls android/app
+          cat android/app/build.gradle* | head -70
+          cat android/app/src/main/AndroidManifest.xml
       - run: flutter pub get
       - name: Build release APK
         env:
