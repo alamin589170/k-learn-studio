@@ -14,11 +14,13 @@ import 'connected.dart';
 import 'search.dart';
 import 'sentence.dart';
 import 'sync.dart';
+import 'image_manager.dart';
 
 export 'vocab.dart' hide vocabPageFor;
 
 Widget? vocabPageFor(int i) {
   SyncService.autoOnce();
+  if (i == 1) return const ImageManagerPage();
   if (i == 6) return const ReadingPage();
   if (i == 0) return const FlashcardPage();
   if (i == 7) return const GrammarPage();
