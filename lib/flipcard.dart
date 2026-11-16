@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'images.dart';
 import 'vocab.dart';
-
+import 'package:url_launcher/url_launcher.dart';
 class FlipCard extends StatefulWidget {
   final Word word;
   const FlipCard({super.key, required this.word});
@@ -74,7 +74,17 @@ class _FlipCardState extends State<FlipCard>
         ),
       ),
     );
-    if (act == null) return;
+    if (act == null) return;    if (act == 'google' || act == 'pinterest') {
+      final q = Uri.encodeQueryComponent(
+          widget.word.en.isNotEmpty ? widget.word.en : widget.word.ko);
+      final url = act == 'google'
+          ? 'https://www.google.com/search?tbm=isch&q=$q'
+          : 'https://www.pinterest.com/search/pins/?q=$q';
+      try {
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      } catch (_) {}
+      return;
+    }
     setState(() => busy = true);
     String? p;
     if (act == 'net') {
