@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'words_data.dart';
-
+import 'quiz_stats.dart';
 class QuizPage extends StatefulWidget {
   const QuizPage({super.key});
   @override
@@ -71,6 +71,7 @@ class _QuizPageState extends State<QuizPage> {
     setState(() {
       if (_i + 1 >= _qs.length) {
         _done = true;
+        QuizStats.save(_score, _qs.length, _mode == true);
       } else {
         _i++;
         _picked = null;
