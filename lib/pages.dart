@@ -8,6 +8,7 @@ import 'planner.dart';
 import 'hub.dart';
 import 'settings.dart';
 import 'grammar.dart';
+import 'exam.dart';
 
 export 'vocab.dart' hide vocabPageFor;
 
@@ -16,6 +17,7 @@ Widget? vocabPageFor(int i) {
   if (i == 7) return const GrammarPage();
   if (i == 8) return const QuizPage();
   if (i == 11) return const RevisionPage();
+  if (i == 14) return const ExamPage();
   if (i == 15) return const ProgressPage();
   if (i == 16) return const PlannerPage();
   if (i == 17) return const HubPage();
