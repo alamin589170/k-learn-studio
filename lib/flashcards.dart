@@ -49,6 +49,78 @@ class _FlashcardPageState extends State<FlashcardPage> {
     setState(() {});
   }
 
+  Widget field(TextEditingController c, String label) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: TextField(
+        controller: c,
+        decoration: InputDecoration(
+            labelText: label, border: const OutlineInputBorder()),
+      ),
+    );
+  }
+
+  Future<void> addWord() async {
+    final ko = TextEditingController();
+    final pron = TextEditingController();
+    final bn = TextEditingController();
+    final en = TextEditingController();
+    final ex = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('নতুন শব্দ'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              field(ko, 'কোরিয়ান শব্দ *'),
+              field(pron, 'বাংলা উচ্চারণ'),
+              field(bn, 'বাংলা অর্থ *'),
+              field(en, 'ইংরেজি অর্থ (ছবি খোঁজার জন্য)'),
+              field(ex, 'উদাহরণ বাক্য'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(c, false),
+              child: const Text('বাতিল')),
+          FilledButton(
+              onPressed: () => Navigator.pop(c, true),
+              child: const Text('সংরক্ষণ')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    if (ko.text.trim().isEmpty || bn.text.trim().isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('কোরিয়ান শব্দ ও বাংলা অর্থ দিতে হবে')));
+      }
+      return;
+    }
+    await Db.insert(Word(
+      ko: ko.text.trim(),
+      pron: pron.text.trim(),
+      bn: bn.text.trim(),
+      en: en.text.trim(),
+      ex: ex.text.trim(),
+    ));
+    final r = await Db.search('');
+    if (!mounted) return;
+    setState(() {
+      words = r;
+      loading = false;
+      index = r.length - 1;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (pc.hasClients && words.isNotEmpty) {
+        pc.jumpToPage(words.length - 1);
+      }
+    });
+  }
+
   Widget page(int i) {
     return AnimatedBuilder(
       animation: pc,
@@ -107,7 +179,16 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final appBar = AppBar(title: const Text('3D ফ্ল্যাশকার্ড'));
+    final appBar = AppBar(
+      title: const Text('3D ফ্ল্যাশকার্ড'),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.add),
+          tooltip: 'নতুন শব্দ',
+          onPressed: addWord,
+        ),
+      ],
+    );
     if (loading) {
       return Scaffold(
         appBar: appBar,
@@ -120,6 +201,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
         body: const Center(child: Text('কোনো শব্দ নেই।')),
       );
     }
+    if (index >= words.length) index = words.length - 1;
     final w = words[index];
     return Scaffold(
       appBar: appBar,
