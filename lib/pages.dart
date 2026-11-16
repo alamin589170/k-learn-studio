@@ -9,10 +9,12 @@ import 'hub.dart';
 import 'settings.dart';
 import 'grammar.dart';
 import 'exam.dart';
+import 'reading.dart';
 
 export 'vocab.dart' hide vocabPageFor;
 
 Widget? vocabPageFor(int i) {
+  if (i == 6) return const ReadingPage();
   if (i == 0) return const FlashcardPage();
   if (i == 7) return const GrammarPage();
   if (i == 8) return const QuizPage();
