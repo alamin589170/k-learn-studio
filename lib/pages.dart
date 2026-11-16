@@ -10,6 +10,8 @@ import 'settings.dart';
 import 'grammar.dart';
 import 'exam.dart';
 import 'reading.dart';
+import 'connected.dart';
+import 'search.dart';
 
 export 'vocab.dart' hide vocabPageFor;
 
@@ -23,6 +25,8 @@ Widget? vocabPageFor(int i) {
   if (i == 15) return const ProgressPage();
   if (i == 16) return const PlannerPage();
   if (i == 17) return const HubPage();
+  if (i == 18) return const ConnectedPage();
+  if (i == 20) return const SearchPage();
   if (i == 21) return const SettingsPage();
   return v.vocabPageFor(i);
 }
