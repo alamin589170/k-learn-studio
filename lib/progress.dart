@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'vocab.dart';
-
+import 'quiz_stats.dart';
+import 'sync.dart';
 class ProgressPage extends StatefulWidget {
   const ProgressPage({super.key});
   @override
@@ -90,6 +91,8 @@ class _ProgressPageState extends State<ProgressPage> {
                   const SizedBox(height: 8),
                   LinearProgressIndicator(value: pct, minHeight: 12),
                   const SizedBox(height: 16),
+                  const QuizAvgCard(),
+const SyncCard(),
                   _stat(Icons.menu_book, 'মোট শব্দ', '$_total', Colors.blue),
                   _stat(Icons.star, 'সংরক্ষিত শব্দ', '$_saved', Colors.amber),
                   _stat(Icons.play_circle, 'রিভিশন শুরু হয়েছে', '$_started',
