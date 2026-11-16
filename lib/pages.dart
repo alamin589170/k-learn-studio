@@ -7,11 +7,13 @@ import 'progress.dart';
 import 'planner.dart';
 import 'hub.dart';
 import 'settings.dart';
+import 'grammar.dart';
 
 export 'vocab.dart' hide vocabPageFor;
 
 Widget? vocabPageFor(int i) {
   if (i == 0) return const FlashcardPage();
+  if (i == 7) return const GrammarPage();
   if (i == 8) return const QuizPage();
   if (i == 11) return const RevisionPage();
   if (i == 15) return const ProgressPage();
