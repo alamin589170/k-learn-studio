@@ -66,6 +66,16 @@ class _FlipCardState extends State<FlipCard>
               onTap: () => Navigator.pop(ctx, 'cam'),
             ),
             ListTile(
+                  leading: const Icon(Icons.search),
+                  title: const Text('Google-এ ছবি খুঁজুন'),
+                  onTap: () => Navigator.pop(ctx, 'google'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.push_pin),
+                  title: const Text('Pinterest-এ ছবি খুঁজুন'),
+                  onTap: () => Navigator.pop(ctx, 'pinterest'),
+                ),
+            ListTile(
               leading: const Icon(Icons.delete_outline),
               title: const Text('ছবি সরান'),
               onTap: () => Navigator.pop(ctx, 'del'),
@@ -74,7 +84,8 @@ class _FlipCardState extends State<FlipCard>
         ),
       ),
     );
-    if (act == null) return;    if (act == 'google' || act == 'pinterest') {
+    if (act == null) return;    
+    if (act == 'google' || act == 'pinterest') {
       final q = Uri.encodeQueryComponent(
           widget.word.en.isNotEmpty ? widget.word.en : widget.word.ko);
       final url = act == 'google'
