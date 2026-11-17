@@ -18,12 +18,14 @@ import 'image_manager.dart';
 import 'ocr.dart';
 import 'smart_reading.dart';
 import 'pronounce.dart';
+import 'pdf_library.dart';
 
 export 'vocab.dart' hide vocabPageFor;
 
 Widget? vocabPageFor(int i) {
   SyncService.autoOnce();
   if (i == 1) return const ImageManagerPage();
+  if (i == 2) return const PdfLibraryPage();
   if (i == 3) return const SmartReadingPage();
   if (i == 4) return const OcrPage();
   if (i == 6) return const ReadingPage();
