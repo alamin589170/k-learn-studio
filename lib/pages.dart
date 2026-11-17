@@ -15,18 +15,24 @@ import 'search.dart';
 import 'sentence.dart';
 import 'sync.dart';
 import 'image_manager.dart';
+import 'ocr.dart';
+import 'smart_reading.dart';
+import 'pronounce.dart';
 
 export 'vocab.dart' hide vocabPageFor;
 
 Widget? vocabPageFor(int i) {
   SyncService.autoOnce();
   if (i == 1) return const ImageManagerPage();
+  if (i == 3) return const SmartReadingPage();
+  if (i == 4) return const OcrPage();
   if (i == 6) return const ReadingPage();
   if (i == 0) return const FlashcardPage();
   if (i == 7) return const GrammarPage();
   if (i == 8) return const QuizPage();
   if (i == 11) return const RevisionPage();
   if (i == 12) return const SentencePage();
+  if (i == 13) return const PronouncePage();
   if (i == 14) return const ExamPage();
   if (i == 15) return const ProgressPage();
   if (i == 16) return const PlannerPage();
