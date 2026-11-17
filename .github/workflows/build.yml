@@ -36,7 +36,8 @@ jobs:
         run: |
           ls android/app
           cat android/app/build.gradle* | head -70
-          cat android/app/src/main/AndroidManifest.xml- run: flutter pub get
+          cat android/app/src/main/AndroidManifest.xml
+          flutter pub get
       - name: Build release APK
         env:
           PIXABAY_KEY: ${{ secrets.PIXABAY_KEY }}
