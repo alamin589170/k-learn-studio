@@ -38,7 +38,12 @@ jobs:
           cat android/app/build.gradle* | head -70
           cat android/app/src/main/AndroidManifest.xml
           flutter pub get
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 24/' android/app/build.gradle.kts
+          printf '\ndependencies {\n    implementation("com.google.mlkit:text-recognition-korean:16.0.1")\n}\n' >> android/app/build.gradle.kts
+          sed -i 's#<application#<uses-permission android:name="android.permission.RECORD_AUDIO"/>\n    <application#' android/app/src/main/AndroidManifest.xml
+          grep -n "minSdk\|text-recognition\|RECORD_AUDIO" android/app/build.gradle.kts android/app/src/main/AndroidManifest.xml
       - name: Build release APK
+      
         env:
           PIXABAY_KEY: ${{ secrets.PIXABAY_KEY }}
         run: flutter build apk --release --dart-define=PIXABAY_KEY=$PIXABAY_KEY
