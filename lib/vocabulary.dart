@@ -1,0 +1,298 @@
+import 'package:flutter/material.dart';
+import 'ui.dart';
+import 'vocab.dart';
+
+class VocabPage extends StatefulWidget {
+  final bool savedOnly;
+  const VocabPage({super.key, this.savedOnly = false});
+  @override
+  State<VocabPage> createState() => _VocabPageState();
+}
+
+class _VocabPageState extends State<VocabPage> {
+  List<Word> words = [];
+  String q = '';
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  Future<void> load() async {
+    final my = q;
+    final r = await Db.search(my, savedOnly: widget.savedOnly);
+    if (!mounted || my != q) return;
+    setState(() {
+      words = r;
+      loading = false;
+    });
+  }
+
+  Future<void> toggle(Word w) async {
+    w.saved = !w.saved;
+    await Db.update(w);
+    if (!mounted) return;
+    setState(() {
+      if (widget.savedOnly && !w.saved) words.remove(w);
+    });
+  }
+
+  Future<void> confirmDelete(Word w) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('শব্দটি মুছবেন?'),
+        content: Text(w.ko),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(c, false),
+              child: const Text('না')),
+          FilledButton(
+              onPressed: () => Navigator.pop(c, true),
+              child: const Text('মুছুন')),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await Db.delete(w.id!);
+      load();
+    }
+  }
+
+  Widget field(TextEditingController c, String label) => Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: TextField(
+          controller: c,
+          decoration: InputDecoration(
+              labelText: label, border: const OutlineInputBorder()),
+        ),
+      );
+
+  Future<void> edit([Word? w]) async {
+    final ko = TextEditingController(text: w?.ko ?? '');
+    final pron = TextEditingController(text: w?.pron ?? '');
+    final bn = TextEditingController(text: w?.bn ?? '');
+    final en = TextEditingController(text: w?.en ?? '');
+    final ex = TextEditingController(text: w?.ex ?? '');
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(w == null ? 'নতুন শব্দ' : 'শব্দ সম্পাদনা'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              field(ko, 'কোরিয়ান শব্দ *'),
+              field(pron, 'বাংলা উচ্চারণ'),
+              field(bn, 'বাংলা অর্থ *'),
+              field(en, 'ইংরেজি অর্থ (ছবির জন্য)'),
+              field(ex, 'উদাহরণ বাক্য'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(c, false),
+              child: const Text('বাতিল')),
+          FilledButton(
+              onPressed: () => Navigator.pop(c, true),
+              child: const Text('সংরক্ষণ')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    if (ko.text.trim().isEmpty || bn.text.trim().isEmpty) return;
+    if (w == null) {
+      await Db.insert(Word(
+          ko: ko.text.trim(),
+          pron: pron.text.trim(),
+          bn: bn.text.trim(),
+          en: en.text.trim(),
+          ex: ex.text.trim()));
+    } else {
+      w.ko = ko.text.trim();
+      w.pron = pron.text.trim();
+      w.bn = bn.text.trim();
+      w.en = en.text.trim();
+      w.ex = ex.text.trim();
+      await Db.update(w);
+    }
+    load();
+  }
+
+  void detail(Word w) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (c) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  WordThumb(word: w, size: 72),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(w.ko,
+                        style: const TextStyle(
+                            fontSize: 30, fontWeight: FontWeight.bold)),
+                  ),
+                  IconButton(
+                      iconSize: 32,
+                      icon: const Icon(Icons.volume_up),
+                      onPressed: () => speakKorean(w.ko)),
+                ],
+              ),
+              if (w.pron.isNotEmpty)
+                Text(w.pron,
+                    style: const TextStyle(
+                        fontSize: 16, fontStyle: FontStyle.italic)),
+              const SizedBox(height: 8),
+              Text(w.bn,
+                  style: const TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.bold)),
+              if (w.en.isNotEmpty)
+                Text(w.en, style: const TextStyle(fontSize: 16)),
+              if (w.ex.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Text(w.ex, style: const TextStyle(fontSize: 16)),
+              ],
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  icon: const Icon(Icons.edit),
+                  label: const Text('সম্পাদনা'),
+                  onPressed: () {
+                    Navigator.pop(c);
+                    edit(w);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget card(Word w, int i) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Material(
+        color: cs.surface,
+        elevation: 1,
+        borderRadius: BorderRadius.circular(22),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: () => detail(w),
+          onLongPress: () => confirmDelete(w),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                WordThumb(word: w, size: 64),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${i + 1}. ${w.ko}',
+                          style: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold)),
+                      if (w.pron.isNotEmpty)
+                        Text(w.pron,
+                            style: TextStyle(
+                                fontSize: 14,
+                                fontStyle: FontStyle.italic,
+                                color: cs.primary)),
+                      Text(w.bn, style: const TextStyle(fontSize: 16)),
+                      if (w.en.isNotEmpty)
+                        Text(w.en,
+                            style: TextStyle(
+                                fontSize: 13, color: cs.onSurfaceVariant)),
+                    ],
+                  ),
+                ),
+                Column(
+                  children: [
+                    IconButton(
+                        icon: const Icon(Icons.volume_up),
+                        onPressed: () => speakKorean(w.ko)),
+                    IconButton(
+                        icon: Icon(
+                            w.saved ? Icons.bookmark : Icons.bookmark_border,
+                            color: w.saved ? cs.primary : null),
+                        onPressed: () => toggle(w)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Stack(
+      children: [
+        Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: TextField(
+                onChanged: (v) {
+                  q = v;
+                  load();
+                },
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search),
+                  hintText: 'শব্দ খুঁজুন...',
+                  filled: true,
+                  fillColor: cs.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(28),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : words.isEmpty
+                      ? Center(
+                          child: Text(widget.savedOnly
+                              ? 'কোনো সংরক্ষিত শব্দ নেই'
+                              : 'কোনো শব্দ পাওয়া যায়নি'))
+                      : ListView.builder(
+                          padding: const EdgeInsets.only(bottom: 90),
+                          itemCount: words.length,
+                          itemBuilder: (c, i) => card(words[i], i),
+                        ),
+            ),
+          ],
+        ),
+        if (!widget.savedOnly)
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              heroTag: 'add_word_fab',
+              onPressed: () => edit(),
+              child: const Icon(Icons.add),
+            ),
+          ),
+      ],
+    );
+  }
+}
