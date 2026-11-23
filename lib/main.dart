@@ -1,50 +1,15 @@
 import 'package:flutter/material.dart';
-import 'pages.dart';
+import 'connected.dart';
+import 'flashcards.dart';
+import 'grammar.dart';
+import 'hub.dart';
+import 'library.dart';
+import 'quiz.dart';
 import 'settings.dart';
+import 'ui.dart';
+import 'vocabulary.dart';
 
 void main() => runApp(const KLearnApp());
-
-class Feature {
-  final String title;
-  final String sub;
-  final IconData icon;
-  final Color color;
-  const Feature(this.title, this.sub, this.icon, this.color);
-}
-
-const features = [
-  Feature('3D ফ্ল্যাশকার্ড', 'শব্দ, ছবি ও অডিও', Icons.style, Color(0xFF6C5CE7)),
-  Feature('ছবি ম্যানেজার', 'ক্যামেরা ও গ্যালারি', Icons.image, Color(0xFFE17055)),
-  Feature('PDF লাইব্রেরি', 'বই পড়া ও নোট', Icons.picture_as_pdf, Color(0xFFD63031)),
-  Feature('স্মার্ট রিডিং', 'PDF থেকে অনুবাদ', Icons.auto_stories, Color(0xFF00B894)),
-  Feature('ক্যামেরা OCR', 'স্ক্যান করে অর্থ', Icons.document_scanner, Color(0xFF0984E3)),
-  Feature('অভিধান', 'কোরিয়ান-বাংলা', Icons.menu_book, Color(0xFF6C5CE7)),
-  Feature('পড়া ও শোনা', 'গল্প ও কথোপকথন', Icons.headphones, Color(0xFFE84393)),
-  Feature('গ্রামার সেন্টার', 'হাঙ্গুল থেকে TOPIK', Icons.school, Color(0xFF00CEC9)),
-  Feature('কুইজ ও টেস্ট', 'নিজেকে যাচাই', Icons.quiz, Color(0xFFFDAA5E)),
-  Feature('আমার শব্দ', 'সংরক্ষিত শব্দ', Icons.bookmark, Color(0xFFE17055)),
-  Feature('AI টিউটর', 'বাংলায় প্রশ্ন করুন', Icons.smart_toy, Color(0xFF6C5CE7)),
-  Feature('স্মার্ট রিভিশন', 'ভুলে যাওয়া শব্দ', Icons.replay, Color(0xFF00B894)),
-  Feature('বাক্য নির্মাতা', 'বাংলা থেকে কোরিয়ান', Icons.edit_note, Color(0xFF0984E3)),
-  Feature('উচ্চারণ অনুশীলন', 'নিজের কণ্ঠ রেকর্ড', Icons.mic, Color(0xFFD63031)),
-  Feature('TOPIK / EPS', 'মডেল টেস্ট', Icons.assignment, Color(0xFFE84393)),
-  Feature('আমার অগ্রগতি', 'রিপোর্ট ও হিসাব', Icons.bar_chart, Color(0xFF00CEC9)),
-  Feature('স্টাডি প্ল্যানার', 'দৈনিক লক্ষ্য', Icons.event_note, Color(0xFFFDAA5E)),
-  Feature('ওয়েবসাইট হাব', 'দরকারি লিংক', Icons.language, Color(0xFF6C5CE7)),
-  Feature('কানেক্টেড অ্যাপস', 'সমর্থিত সার্ভিস', Icons.apps, Color(0xFFE17055)),
-  Feature('ক্লাউড ব্যাকআপ', 'ব্যাকআপ ও সিঙ্ক', Icons.cloud_upload, Color(0xFF00B894)),
-  Feature('সার্চ', 'সবকিছু একসঙ্গে খুঁজুন', Icons.search, Color(0xFF0984E3)),
-  Feature('সেটিংস', 'থিম ও ফন্ট', Icons.settings, Color(0xFF636E72)),
-];
-
-// হোমে যে কার্ডগুলো লুকানো থাকবে (কার্ডের নম্বর)।
-// ফেরাতে চাইলে এখান থেকে নম্বর মুছে দিন।
-const hiddenCards = {1, 3, 4, 6, 10, 11, 12, 13, 14, 15, 16, 19, 20};
-
-final visibleCards = [
-  for (var k = 0; k < features.length; k++)
-    if (!hiddenCards.contains(k)) k
-];
 
 class KLearnApp extends StatefulWidget {
   const KLearnApp({super.key});
@@ -57,12 +22,6 @@ class _KLearnAppState extends State<KLearnApp> {
   void initState() {
     super.initState();
     AppSettings.load().catchError((_) {});
-  }
-
-  void toggle() {
-    AppSettings.setMode(AppSettings.mode.value == ThemeMode.dark
-        ? ThemeMode.light
-        : ThemeMode.dark);
   }
 
   @override
@@ -92,10 +51,7 @@ class _KLearnAppState extends State<KLearnApp> {
                   .copyWith(textScaler: TextScaler.linear(scale)),
               child: child!,
             ),
-            home: HomePage(
-              onToggle: toggle,
-              isDark: mode == ThemeMode.dark,
-            ),
+            home: const Shell(),
           ),
         ),
       ),
@@ -103,101 +59,163 @@ class _KLearnAppState extends State<KLearnApp> {
   }
 }
 
-class HomePage extends StatelessWidget {
-  final VoidCallback onToggle;
-  final bool isDark;
-  const HomePage({super.key, required this.onToggle, required this.isDark});
-
+class Shell extends StatefulWidget {
+  const Shell({super.key});
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('K-Learn Studio',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-            onPressed: onToggle,
-          ),
-        ],
-      ),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(12),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.1,
-        ),
-        itemCount: visibleCards.length,
-        itemBuilder: (context, idx) {
-          final i = visibleCards[idx];
-          final f = features[i];
-          return InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) =>
-                      vocabPageFor(i) ?? ComingSoonPage(feature: f)),
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [f.color, f.color.withOpacity(0.7)],
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Icon(f.icon, color: Colors.white, size: 34),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(f.title,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 2),
-                      Text(f.sub,
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 12)),
-                    ],
+  State<Shell> createState() => _ShellState();
+}
+
+class _ShellState extends State<Shell> {
+  int tab = 0;
+
+  static const titles = ['শব্দভাণ্ডার', 'গ্রামার', 'লাইব্রেরি', 'সংরক্ষিত শব্দ'];
+
+  Widget page() {
+    switch (tab) {
+      case 1:
+        return const GrammarPage();
+      case 2:
+        return const LibraryPage();
+      case 3:
+        return const VocabPage(savedOnly: true);
+      default:
+        return const VocabPage();
+    }
+  }
+
+  void toggleTheme(bool isDark) {
+    AppSettings.setMode(isDark ? ThemeMode.light : ThemeMode.dark);
+  }
+
+  void goTab(BuildContext ctx, int i) {
+    Navigator.pop(ctx);
+    setState(() => tab = i);
+  }
+
+  void openPage(BuildContext ctx, Widget p) {
+    final nav = Navigator.of(ctx);
+    nav.pop();
+    nav.push(MaterialPageRoute(builder: (_) => p));
+  }
+
+  Widget item(BuildContext ctx, IconData icon, String label, VoidCallback f,
+      {bool selected = false}) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(label),
+      selected: selected,
+      onTap: f,
+    );
+  }
+
+  Widget sectionTitle(String t) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+        child: Text(t,
+            style: const TextStyle(
+                fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+      );
+
+  Widget drawer() {
+    return Drawer(
+      child: Builder(
+        builder: (ctx) {
+          final cs = Theme.of(ctx).colorScheme;
+          return ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [cs.primary, cs.primary.withOpacity(0.7)],
                   ),
-                ],
+                ),
+                child: const Text('K-Learn Studio',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold)),
               ),
-            ),
+              sectionTitle('BROWSE'),
+              item(ctx, Icons.home, 'শব্দভাণ্ডার', () => goTab(ctx, 0),
+                  selected: tab == 0),
+              item(ctx, Icons.menu_book, 'গ্রামার', () => goTab(ctx, 1),
+                  selected: tab == 1),
+              item(ctx, Icons.library_books, 'লাইব্রেরি (PDF)',
+                  () => goTab(ctx, 2),
+                  selected: tab == 2),
+              item(ctx, Icons.bookmark, 'সংরক্ষিত শব্দ', () => goTab(ctx, 3),
+                  selected: tab == 3),
+              const Divider(),
+              sectionTitle('PRACTICE'),
+              item(ctx, Icons.quiz, 'কুইজ ও টেস্ট',
+                  () => openPage(ctx, const QuizPage())),
+              item(ctx, Icons.style, '3D ফ্ল্যাশকার্ড',
+                  () => openPage(ctx, const FlashcardPage())),
+              const Divider(),
+              sectionTitle('LINKS'),
+              item(ctx, Icons.language, 'ওয়েবসাইট হাব',
+                  () => openPage(ctx, const HubPage())),
+              item(ctx, Icons.apps, 'কানেক্টেড অ্যাপস',
+                  () => openPage(ctx, const ConnectedPage())),
+              const Divider(),
+              sectionTitle('APP'),
+              item(ctx, Icons.settings, 'সেটিংস',
+                  () => openPage(ctx, const SettingsPage())),
+              item(ctx, Icons.info_outline, 'About', () {
+                Navigator.pop(ctx);
+                showAboutDialog(
+                  context: context,
+                  applicationName: 'K-Learn Studio',
+                  applicationVersion: '1.0',
+                  children: const [
+                    Text('বাংলা ভাষীদের জন্য কোরিয়ান শেখার অ্যাপ।'),
+                  ],
+                );
+              }),
+            ],
           );
         },
       ),
     );
   }
-}
-
-class ComingSoonPage extends StatelessWidget {
-  final Feature feature;
-  const ComingSoonPage({super.key, required this.feature});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      appBar: AppBar(title: Text(feature.title)),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(feature.icon, size: 80, color: feature.color),
-            const SizedBox(height: 16),
-            const Text('শীঘ্রই আসছে',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          ],
-        ),
+      appBar: tab == 1
+          ? null
+          : AppBar(
+              backgroundColor: Colors.transparent,
+              scrolledUnderElevation: 0,
+              centerTitle: true,
+              leading: Builder(
+                builder: (c) => IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () => Scaffold.of(c).openDrawer(),
+                ),
+              ),
+              title: Text(titles[tab],
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              actions: [
+                IconButton(
+                  icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+                  onPressed: () => toggleTheme(isDark),
+                ),
+              ],
+            ),
+      drawer: drawer(),
+      body: AnimatedBg(child: SafeArea(top: false, child: page())),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: tab,
+        onDestinationSelected: (i) => setState(() => tab = i),
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'হোম'),
+          NavigationDestination(icon: Icon(Icons.menu_book_outlined), selectedIcon: Icon(Icons.menu_book), label: 'গ্রামার'),
+          NavigationDestination(icon: Icon(Icons.library_books_outlined), selectedIcon: Icon(Icons.library_books), label: 'লাইব্রেরি'),
+          NavigationDestination(icon: Icon(Icons.bookmark_border), selectedIcon: Icon(Icons.bookmark), label: 'সংরক্ষিত'),
+        ],
       ),
     );
   }
