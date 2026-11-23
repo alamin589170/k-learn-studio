@@ -6,6 +6,8 @@ class AppSettings {
   static final ValueNotifier<double> textScale = ValueNotifier(1.0);
   static final ValueNotifier<int> seed = ValueNotifier(0xFF6C5CE7);
   static final ValueNotifier<double> speech = ValueNotifier(0.4);
+  static final ValueNotifier<bool> animate = ValueNotifier(true);
+  static final ValueNotifier<int> animSecs = ValueNotifier(14);
 
   static const List<int> colors = [
     0xFF6C5CE7,
@@ -15,6 +17,7 @@ class AppSettings {
     0xFFE84393,
     0xFF636E72,
   ];
+  static const List<int> speeds = [24, 14, 7];
 
   static Future<void> _ensure() async {
     final db = await Db.get();
@@ -37,6 +40,9 @@ class AppSettings {
     textScale.value = double.tryParse(m['scale'] ?? '') ?? 1.0;
     seed.value = int.tryParse(m['seed'] ?? '') ?? 0xFF6C5CE7;
     speech.value = double.tryParse(m['speech'] ?? '') ?? 0.4;
+    animate.value = (m['anim'] ?? '1') == '1';
+    final s = int.tryParse(m['animsecs'] ?? '') ?? 14;
+    animSecs.value = speeds.contains(s) ? s : 14;
   }
 
   static Future<void> save(String k, String v) async {
@@ -67,6 +73,16 @@ class AppSettings {
   static Future<void> setSpeech(double v) async {
     speech.value = v;
     await save('speech', '$v');
+  }
+
+  static Future<void> setAnimate(bool v) async {
+    animate.value = v;
+    await save('anim', v ? '1' : '0');
+  }
+
+  static Future<void> setAnimSecs(int v) async {
+    animSecs.value = v;
+    await save('animsecs', '$v');
   }
 }
 
@@ -99,6 +115,28 @@ class SettingsPage extends StatelessWidget {
                 ],
                 selected: {m},
                 onSelectionChanged: (s) => AppSettings.setMode(s.first),
+              ),
+            ),
+            _title('রঙের এনিমেশন'),
+            ValueListenableBuilder<bool>(
+              valueListenable: AppSettings.animate,
+              builder: (c, on, _) => SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('ব্যাকগ্রাউন্ডের রং ধীরে বদলাবে'),
+                value: on,
+                onChanged: (v) => AppSettings.setAnimate(v),
+              ),
+            ),
+            ValueListenableBuilder<int>(
+              valueListenable: AppSettings.animSecs,
+              builder: (c, s, _) => SegmentedButton<int>(
+                segments: const [
+                  ButtonSegment(value: 24, label: Text('ধীর')),
+                  ButtonSegment(value: 14, label: Text('মাঝারি')),
+                  ButtonSegment(value: 7, label: Text('দ্রুত')),
+                ],
+                selected: {AppSettings.speeds.contains(s) ? s : 14},
+                onSelectionChanged: (v) => AppSettings.setAnimSecs(v.first),
               ),
             ),
             _title('লেখার আকার'),
