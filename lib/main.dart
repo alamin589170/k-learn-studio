@@ -37,6 +37,15 @@ const features = [
   Feature('সেটিংস', 'থিম ও ফন্ট', Icons.settings, Color(0xFF636E72)),
 ];
 
+// হোমে যে কার্ডগুলো লুকানো থাকবে (কার্ডের নম্বর)।
+// ফেরাতে চাইলে এখান থেকে নম্বর মুছে দিন।
+const hiddenCards = {1, 3, 4, 6, 10, 11, 12, 13, 14, 15, 16, 19, 20};
+
+final visibleCards = [
+  for (var k = 0; k < features.length; k++)
+    if (!hiddenCards.contains(k)) k
+];
+
 class KLearnApp extends StatefulWidget {
   const KLearnApp({super.key});
   @override
@@ -120,8 +129,9 @@ class HomePage extends StatelessWidget {
           crossAxisSpacing: 12,
           childAspectRatio: 1.1,
         ),
-        itemCount: features.length,
-        itemBuilder: (context, i) {
+        itemCount: visibleCards.length,
+        itemBuilder: (context, idx) {
+          final i = visibleCards[idx];
           final f = features[i];
           return InkWell(
             borderRadius: BorderRadius.circular(20),
