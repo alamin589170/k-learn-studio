@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'filters.dart';
 import 'flipcard.dart';
+import 'style.dart';
 import 'vocab.dart';
 
 class FlashcardPage extends StatefulWidget {
@@ -10,6 +12,8 @@ class FlashcardPage extends StatefulWidget {
 
 class _FlashcardPageState extends State<FlashcardPage> {
   final PageController pc = PageController();
+  final WordFilter filter = WordFilter();
+  List<Word> all = [];
   List<Word> words = [];
   int index = 0;
   bool loading = true;
@@ -30,16 +34,35 @@ class _FlashcardPageState extends State<FlashcardPage> {
     final r = await Db.search('');
     if (!mounted) return;
     setState(() {
-      words = r;
+      all = r;
+      words = applyFilter(r, filter);
       loading = false;
     });
   }
 
-  void shuffle() {
-    words.shuffle();
-    index = 0;
+  void refilter() {
     if (pc.hasClients) pc.jumpToPage(0);
-    setState(() {});
+    setState(() {
+      words = applyFilter(all, filter);
+      index = 0;
+    });
+  }
+
+  Future<void> openFilter() async {
+    if (await showFilterSheet(context, filter)) refilter();
+  }
+
+  Future<void> jump() async {
+    final n = await askNumber(context, words.length);
+    if (n == null) return;
+    if (pc.hasClients) pc.jumpToPage(n - 1);
+    setState(() => index = n - 1);
+  }
+
+  void shuffle() {
+    words = List<Word>.of(words)..shuffle();
+    if (pc.hasClients) pc.jumpToPage(0);
+    setState(() => index = 0);
   }
 
   Future<void> toggleSave() async {
@@ -107,9 +130,11 @@ class _FlashcardPageState extends State<FlashcardPage> {
       en: en.text.trim(),
       ex: ex.text.trim(),
     ));
+    filter.clear();
     final r = await Db.search('');
     if (!mounted) return;
     setState(() {
+      all = r;
       words = r;
       loading = false;
       index = r.length - 1;
@@ -150,7 +175,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
   Widget bottomBar(Word w) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
@@ -177,11 +202,23 @@ class _FlashcardPageState extends State<FlashcardPage> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final appBar = AppBar(
+  PreferredSizeWidget bar() {
+    return AppBar(
       title: const Text('3D ফ্ল্যাশকার্ড'),
       actions: [
+        IconButton(
+          icon: Badge(
+            isLabelVisible: filter.active,
+            child: const Icon(Icons.tune),
+          ),
+          tooltip: 'ফিল্টার',
+          onPressed: openFilter,
+        ),
+        IconButton(
+          icon: const Icon(Icons.tag),
+          tooltip: 'নম্বরে যান',
+          onPressed: jump,
+        ),
         IconButton(
           icon: const Icon(Icons.add),
           tooltip: 'নতুন শব্দ',
@@ -189,22 +226,41 @@ class _FlashcardPageState extends State<FlashcardPage> {
         ),
       ],
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     if (loading) {
       return Scaffold(
-        appBar: appBar,
+        appBar: bar(),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
     if (words.isEmpty) {
       return Scaffold(
-        appBar: appBar,
-        body: const Center(child: Text('কোনো শব্দ নেই।')),
+        appBar: bar(),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('এই ফিল্টারে কোনো শব্দ নেই।'),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: () {
+                  filter.clear();
+                  refilter();
+                },
+                child: const Text('ফিল্টার পরিষ্কার করুন'),
+              ),
+            ],
+          ),
+        ),
       );
     }
     if (index >= words.length) index = words.length - 1;
     final w = words[index];
     return Scaffold(
-      appBar: appBar,
+      appBar: bar(),
       body: SafeArea(
         child: Column(
           children: [
@@ -216,7 +272,22 @@ class _FlashcardPageState extends State<FlashcardPage> {
                 itemBuilder: (context, i) => page(i),
               ),
             ),
-            Text('${index + 1} / ${words.length}   (সোয়াইপ করুন)'),
+            InkWell(
+              onTap: jump,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                child: Column(
+                  children: [
+                    Text('${index + 1} / ${words.length}   ▸ নম্বরে যান',
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text('${posName(posOf(w))} · ${catName(catOf(w))}',
+                        style:
+                            TextStyle(fontSize: 12, color: softText(context))),
+                  ],
+                ),
+              ),
+            ),
             bottomBar(w),
           ],
         ),

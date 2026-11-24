@@ -1,15 +1,36 @@
 import 'package:flutter/material.dart';
+import 'about.dart';
 import 'connected.dart';
 import 'flashcards.dart';
 import 'grammar.dart';
+import 'home.dart';
 import 'hub.dart';
 import 'library.dart';
 import 'quiz.dart';
 import 'settings.dart';
+import 'style.dart';
 import 'ui.dart';
 import 'vocabulary.dart';
 
 void main() => runApp(const KLearnApp());
+
+ThemeData buildTheme(int seed, Brightness b) {
+  final dark = b == Brightness.dark;
+  final base = ColorScheme.fromSeed(seedColor: Color(seed), brightness: b);
+  final cs = base.copyWith(
+    surface: dark ? const Color(0xFF14243A) : kCream,
+  );
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: cs,
+    scaffoldBackgroundColor: cs.surface,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+      centerTitle: true,
+    ),
+  );
+}
 
 class KLearnApp extends StatefulWidget {
   const KLearnApp({super.key});
@@ -36,16 +57,8 @@ class _KLearnAppState extends State<KLearnApp> {
             title: 'K-Learn Studio',
             debugShowCheckedModeBanner: false,
             themeMode: mode,
-            theme: ThemeData(
-              useMaterial3: true,
-              colorSchemeSeed: Color(seed),
-              brightness: Brightness.light,
-            ),
-            darkTheme: ThemeData(
-              useMaterial3: true,
-              colorSchemeSeed: Color(seed),
-              brightness: Brightness.dark,
-            ),
+            theme: buildTheme(seed, Brightness.light),
+            darkTheme: buildTheme(seed, Brightness.dark),
             builder: (context, child) => MediaQuery(
               data: MediaQuery.of(context)
                   .copyWith(textScaler: TextScaler.linear(scale)),
@@ -66,25 +79,33 @@ class Shell extends StatefulWidget {
 }
 
 class _ShellState extends State<Shell> {
-  int tab = 0;
+  // ০ শব্দ, ১ গ্রামার, ২ হোম, ৩ লাইব্রেরি, ৪ সংরক্ষিত
+  int tab = 2;
+  final GlobalKey<ScaffoldState> key = GlobalKey<ScaffoldState>();
 
-  static const titles = ['শব্দভাণ্ডার', 'গ্রামার', 'লাইব্রেরি', 'সংরক্ষিত শব্দ'];
+  static const titles = [
+    'শব্দভাণ্ডার',
+    'গ্রামার',
+    'হোম',
+    'লাইব্রেরি',
+    'সংরক্ষিত শব্দ'
+  ];
+
+  void openMenu() => key.currentState?.openDrawer();
 
   Widget page() {
     switch (tab) {
+      case 0:
+        return const VocabPage();
       case 1:
-        return const GrammarPage();
-      case 2:
-        return const LibraryPage();
+        return GrammarPage(onMenu: openMenu);
       case 3:
+        return const LibraryPage();
+      case 4:
         return const VocabPage(savedOnly: true);
       default:
-        return const VocabPage();
+        return HomePage(goTab: (i) => setState(() => tab = i), onMenu: openMenu);
     }
-  }
-
-  void toggleTheme(bool isDark) {
-    AppSettings.setMode(isDark ? ThemeMode.light : ThemeMode.dark);
   }
 
   void goTab(BuildContext ctx, int i) {
@@ -98,7 +119,7 @@ class _ShellState extends State<Shell> {
     nav.push(MaterialPageRoute(builder: (_) => p));
   }
 
-  Widget item(BuildContext ctx, IconData icon, String label, VoidCallback f,
+  Widget item(IconData icon, String label, VoidCallback f,
       {bool selected = false}) {
     return ListTile(
       leading: Icon(icon),
@@ -127,52 +148,52 @@ class _ShellState extends State<Shell> {
                 padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [cs.primary, cs.primary.withOpacity(0.7)],
+                    colors: [kNavy, Color.lerp(kNavy, cs.primary, 0.6)!],
                   ),
                 ),
-                child: const Text('K-Learn Studio',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold)),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('K-Learn Studio',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold)),
+                    SizedBox(height: 4),
+                    Text('by MD Alamin',
+                        style: TextStyle(color: Colors.white70, fontSize: 13)),
+                  ],
+                ),
               ),
               sectionTitle('BROWSE'),
-              item(ctx, Icons.home, 'শব্দভাণ্ডার', () => goTab(ctx, 0),
+              item(Icons.home, 'হোম', () => goTab(ctx, 2), selected: tab == 2),
+              item(Icons.translate, 'শব্দভাণ্ডার', () => goTab(ctx, 0),
                   selected: tab == 0),
-              item(ctx, Icons.menu_book, 'গ্রামার', () => goTab(ctx, 1),
+              item(Icons.menu_book, 'গ্রামার', () => goTab(ctx, 1),
                   selected: tab == 1),
-              item(ctx, Icons.library_books, 'লাইব্রেরি (PDF)',
-                  () => goTab(ctx, 2),
-                  selected: tab == 2),
-              item(ctx, Icons.bookmark, 'সংরক্ষিত শব্দ', () => goTab(ctx, 3),
+              item(Icons.library_books, 'লাইব্রেরি (PDF বই)',
+                  () => goTab(ctx, 3),
                   selected: tab == 3),
+              item(Icons.bookmark, 'সংরক্ষিত শব্দ', () => goTab(ctx, 4),
+                  selected: tab == 4),
               const Divider(),
               sectionTitle('PRACTICE'),
-              item(ctx, Icons.quiz, 'কুইজ ও টেস্ট',
+              item(Icons.quiz, 'কুইজ ও টেস্ট',
                   () => openPage(ctx, const QuizPage())),
-              item(ctx, Icons.style, '3D ফ্ল্যাশকার্ড',
+              item(Icons.style, '3D ফ্ল্যাশকার্ড',
                   () => openPage(ctx, const FlashcardPage())),
               const Divider(),
               sectionTitle('LINKS'),
-              item(ctx, Icons.language, 'ওয়েবসাইট হাব',
+              item(Icons.language, 'ওয়েবসাইট হাব',
                   () => openPage(ctx, const HubPage())),
-              item(ctx, Icons.apps, 'কানেক্টেড অ্যাপস',
+              item(Icons.apps, 'কানেক্টেড অ্যাপস',
                   () => openPage(ctx, const ConnectedPage())),
               const Divider(),
               sectionTitle('APP'),
-              item(ctx, Icons.settings, 'সেটিংস',
+              item(Icons.settings, 'সেটিংস',
                   () => openPage(ctx, const SettingsPage())),
-              item(ctx, Icons.info_outline, 'About', () {
-                Navigator.pop(ctx);
-                showAboutDialog(
-                  context: context,
-                  applicationName: 'K-Learn Studio',
-                  applicationVersion: '1.0',
-                  children: const [
-                    Text('বাংলা ভাষীদের জন্য কোরিয়ান শেখার অ্যাপ।'),
-                  ],
-                );
-              }),
+              item(Icons.info_outline, 'অ্যাপ ও ডেভেলপার',
+                  () => openPage(ctx, const AboutPage())),
             ],
           );
         },
@@ -180,43 +201,131 @@ class _ShellState extends State<Shell> {
     );
   }
 
+  Widget navItem(int i, IconData icon, String label) {
+    final cs = Theme.of(context).colorScheme;
+    final sel = tab == i;
+    final col = sel ? cs.primary : softText(context);
+    return Expanded(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => setState(() => tab = i),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: col, size: 26),
+            const SizedBox(height: 3),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 12,
+                    color: col,
+                    fontWeight: sel ? FontWeight.bold : FontWeight.normal)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget bottomNav() {
+    final cs = Theme.of(context).colorScheme;
+    final selHome = tab == 2;
+    return SafeArea(
+      top: false,
+      child: SizedBox(
+        height: 108,
+        child: Stack(
+          children: [
+            Positioned(
+              left: 14,
+              right: 14,
+              bottom: 12,
+              height: 70,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cardBg(context),
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: softShadow(context),
+                ),
+                child: Row(
+                  children: [
+                    navItem(0, Icons.translate, 'শব্দ'),
+                    navItem(1, Icons.menu_book, 'গ্রামার'),
+                    const Expanded(child: SizedBox()),
+                    navItem(3, Icons.library_books, 'লাইব্রেরি'),
+                    navItem(4, Icons.bookmark, 'সংরক্ষিত'),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 18,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => setState(() => tab = 2),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 62,
+                      height: 62,
+                      decoration: BoxDecoration(
+                        color: cs.primary,
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: [
+                          BoxShadow(
+                            color: cs.primary.withOpacity(0.45),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.home_rounded,
+                          color: Colors.white, size: 34),
+                    ),
+                    const SizedBox(height: 3),
+                    Text('হোম',
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: selHome ? cs.primary : softText(context))),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final showBar = tab == 0 || tab == 3 || tab == 4;
     return Scaffold(
-      appBar: tab == 1
-          ? null
-          : AppBar(
-              backgroundColor: Colors.transparent,
-              scrolledUnderElevation: 0,
-              centerTitle: true,
-              leading: Builder(
-                builder: (c) => IconButton(
-                  icon: const Icon(Icons.menu),
-                  onPressed: () => Scaffold.of(c).openDrawer(),
-                ),
+      key: key,
+      appBar: showBar
+          ? AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: openMenu,
               ),
               title: Text(titles[tab],
                   style: const TextStyle(fontWeight: FontWeight.bold)),
               actions: [
                 IconButton(
-                  icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-                  onPressed: () => toggleTheme(isDark),
+                  icon: Icon(isDark(context)
+                      ? Icons.light_mode
+                      : Icons.dark_mode),
+                  onPressed: () => AppSettings.setMode(
+                      isDark(context) ? ThemeMode.light : ThemeMode.dark),
                 ),
               ],
-            ),
+            )
+          : null,
       drawer: drawer(),
-      body: AnimatedBg(child: SafeArea(top: false, child: page())),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: tab,
-        onDestinationSelected: (i) => setState(() => tab = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'হোম'),
-          NavigationDestination(icon: Icon(Icons.menu_book_outlined), selectedIcon: Icon(Icons.menu_book), label: 'গ্রামার'),
-          NavigationDestination(icon: Icon(Icons.library_books_outlined), selectedIcon: Icon(Icons.library_books), label: 'লাইব্রেরি'),
-          NavigationDestination(icon: Icon(Icons.bookmark_border), selectedIcon: Icon(Icons.bookmark), label: 'সংরক্ষিত'),
-        ],
-      ),
+      body: AnimatedBg(child: SafeArea(top: false, bottom: false, child: page())),
+      bottomNavigationBar: bottomNav(),
     );
   }
 }

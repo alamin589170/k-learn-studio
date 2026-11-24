@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
+import 'about.dart';
 import 'vocab.dart';
 
 class AppSettings {
   static final ValueNotifier<ThemeMode> mode = ValueNotifier(ThemeMode.light);
   static final ValueNotifier<double> textScale = ValueNotifier(1.0);
-  static final ValueNotifier<int> seed = ValueNotifier(0xFF6C5CE7);
+  static final ValueNotifier<int> seed = ValueNotifier(0xFFC05A2B);
   static final ValueNotifier<double> speech = ValueNotifier(0.4);
   static final ValueNotifier<bool> animate = ValueNotifier(true);
   static final ValueNotifier<int> animSecs = ValueNotifier(14);
 
   static const List<int> colors = [
+    0xFFC05A2B,
+    0xFF1B2F4A,
+    0xFF00897B,
     0xFF6C5CE7,
-    0xFF0984E3,
-    0xFF00B894,
-    0xFFE17055,
     0xFFE84393,
-    0xFF636E72,
+    0xFF2E7D32,
   ];
   static const List<int> speeds = [24, 14, 7];
 
@@ -38,7 +39,7 @@ class AppSettings {
         ? ThemeMode.dark
         : (t == 'system' ? ThemeMode.system : ThemeMode.light);
     textScale.value = double.tryParse(m['scale'] ?? '') ?? 1.0;
-    seed.value = int.tryParse(m['seed'] ?? '') ?? 0xFF6C5CE7;
+    seed.value = int.tryParse(m['seed2'] ?? '') ?? 0xFFC05A2B;
     speech.value = double.tryParse(m['speech'] ?? '') ?? 0.4;
     animate.value = (m['anim'] ?? '1') == '1';
     final s = int.tryParse(m['animsecs'] ?? '') ?? 14;
@@ -67,7 +68,7 @@ class AppSettings {
 
   static Future<void> setSeed(int c) async {
     seed.value = c;
-    await save('seed', '$c');
+    await save('seed2', '$c');
   }
 
   static Future<void> setSpeech(double v) async {
@@ -202,6 +203,17 @@ class SettingsPage extends StatelessWidget {
                     ],
                   ),
                 ],
+              ),
+            ),
+            _title('অ্যাপ'),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.info_outline),
+              title: const Text('অ্যাপ ও ডেভেলপার সম্পর্কে'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AboutPage()),
               ),
             ),
           ],

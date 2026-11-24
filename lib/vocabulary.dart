@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'filters.dart';
+import 'style.dart';
 import 'ui.dart';
 import 'vocab.dart';
 
@@ -10,9 +12,13 @@ class VocabPage extends StatefulWidget {
 }
 
 class _VocabPageState extends State<VocabPage> {
+  List<Word> all = [];
   List<Word> words = [];
+  final WordFilter filter = WordFilter();
+  final ScrollController sc = ScrollController();
   String q = '';
   bool loading = true;
+  static const double rowH = 132;
 
   @override
   void initState() {
@@ -20,14 +26,35 @@ class _VocabPageState extends State<VocabPage> {
     load();
   }
 
+  @override
+  void dispose() {
+    sc.dispose();
+    super.dispose();
+  }
+
   Future<void> load() async {
     final my = q;
     final r = await Db.search(my, savedOnly: widget.savedOnly);
     if (!mounted || my != q) return;
     setState(() {
-      words = r;
+      all = r;
+      words = applyFilter(r, filter);
       loading = false;
     });
+  }
+
+  void refilter() {
+    setState(() => words = applyFilter(all, filter));
+    if (sc.hasClients) sc.jumpTo(0);
+  }
+
+  Future<void> jump() async {
+    final n = await askNumber(context, words.length);
+    if (n == null || !sc.hasClients) return;
+    final maxExt = sc.position.maxScrollExtent;
+    final target = ((n - 1) * rowH).clamp(0.0, maxExt).toDouble();
+    sc.animateTo(target,
+        duration: const Duration(milliseconds: 450), curve: Curves.easeOut);
   }
 
   Future<void> toggle(Word w) async {
@@ -35,7 +62,10 @@ class _VocabPageState extends State<VocabPage> {
     await Db.update(w);
     if (!mounted) return;
     setState(() {
-      if (widget.savedOnly && !w.saved) words.remove(w);
+      if (widget.savedOnly && !w.saved) {
+        words.remove(w);
+        all.remove(w);
+      }
     });
   }
 
@@ -148,19 +178,27 @@ class _VocabPageState extends State<VocabPage> {
                       onPressed: () => speakKorean(w.ko)),
                 ],
               ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                children: [
+                  Chip(label: Text(posName(posOf(w)))),
+                  Chip(label: Text(catName(catOf(w)))),
+                ],
+              ),
               if (w.pron.isNotEmpty)
                 Text(w.pron,
                     style: const TextStyle(
                         fontSize: 16, fontStyle: FontStyle.italic)),
               const SizedBox(height: 8),
-              Text(w.bn,
+              SelectableText(w.bn,
                   style: const TextStyle(
                       fontSize: 22, fontWeight: FontWeight.bold)),
               if (w.en.isNotEmpty)
-                Text(w.en, style: const TextStyle(fontSize: 16)),
+                SelectableText(w.en, style: const TextStyle(fontSize: 16)),
               if (w.ex.isNotEmpty) ...[
                 const SizedBox(height: 10),
-                Text(w.ex, style: const TextStyle(fontSize: 16)),
+                SelectableText(w.ex, style: const TextStyle(fontSize: 16)),
               ],
               const SizedBox(height: 12),
               Align(
@@ -185,54 +223,73 @@ class _VocabPageState extends State<VocabPage> {
     final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: Material(
-        color: cs.surface,
-        elevation: 1,
-        borderRadius: BorderRadius.circular(22),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(22),
-          onTap: () => detail(w),
-          onLongPress: () => confirmDelete(w),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                WordThumb(word: w, size: 64),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+      child: Container(
+        decoration: BoxDecoration(
+          color: cardBg(context),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: softShadow(context),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: () => detail(w),
+            onLongPress: () => confirmDelete(w),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+              child: Row(
+                children: [
+                  WordThumb(word: w, size: 68),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${i + 1}. ${w.ko}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold)),
+                        if (w.pron.isNotEmpty)
+                          Text(w.pron,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  fontStyle: FontStyle.italic,
+                                  color: cs.primary)),
+                        Text(w.bn,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w600)),
+                        if (w.en.isNotEmpty)
+                          Text(w.en,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  fontSize: 13, color: softText(context))),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('${i + 1}. ${w.ko}',
-                          style: const TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold)),
-                      if (w.pron.isNotEmpty)
-                        Text(w.pron,
-                            style: TextStyle(
-                                fontSize: 14,
-                                fontStyle: FontStyle.italic,
-                                color: cs.primary)),
-                      Text(w.bn, style: const TextStyle(fontSize: 16)),
-                      if (w.en.isNotEmpty)
-                        Text(w.en,
-                            style: TextStyle(
-                                fontSize: 13, color: cs.onSurfaceVariant)),
+                      IconButton(
+                          visualDensity: VisualDensity.compact,
+                          icon: const Icon(Icons.volume_up),
+                          onPressed: () => speakKorean(w.ko)),
+                      IconButton(
+                          visualDensity: VisualDensity.compact,
+                          icon: Icon(
+                              w.saved ? Icons.bookmark : Icons.bookmark_border,
+                              color: w.saved ? cs.primary : null),
+                          onPressed: () => toggle(w)),
                     ],
                   ),
-                ),
-                Column(
-                  children: [
-                    IconButton(
-                        icon: const Icon(Icons.volume_up),
-                        onPressed: () => speakKorean(w.ko)),
-                    IconButton(
-                        icon: Icon(
-                            w.saved ? Icons.bookmark : Icons.bookmark_border,
-                            color: w.saved ? cs.primary : null),
-                        onPressed: () => toggle(w)),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -242,13 +299,12 @@ class _VocabPageState extends State<VocabPage> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Stack(
       children: [
         Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: TextField(
                 onChanged: (v) {
                   q = v;
@@ -258,13 +314,20 @@ class _VocabPageState extends State<VocabPage> {
                   prefixIcon: const Icon(Icons.search),
                   hintText: 'শব্দ খুঁজুন...',
                   filled: true,
-                  fillColor: cs.surface,
+                  fillColor: cardBg(context),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(28),
                     borderSide: BorderSide.none,
                   ),
                 ),
               ),
+            ),
+            FilterBar(
+              filter: filter,
+              total: words.length,
+              onChanged: refilter,
+              onJump: jump,
             ),
             Expanded(
               child: loading
@@ -275,6 +338,8 @@ class _VocabPageState extends State<VocabPage> {
                               ? 'কোনো সংরক্ষিত শব্দ নেই'
                               : 'কোনো শব্দ পাওয়া যায়নি'))
                       : ListView.builder(
+                          controller: sc,
+                          itemExtent: rowH,
                           padding: const EdgeInsets.only(bottom: 90),
                           itemCount: words.length,
                           itemBuilder: (c, i) => card(words[i], i),
