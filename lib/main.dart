@@ -46,26 +46,30 @@ class _KLearnAppState extends State<KLearnApp> {
               textScaler: TextScaler.linear(AppSettings.textScale.value)),
           child: Stack(
             children: [
-              child!,
-              ListenableBuilder(
-                listenable:
-                    Listenable.merge([AppSettings.warm, AppSettings.dim]),
-                builder: (c, _) => IgnorePointer(
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: ColoredBox(
-                          color: const Color(0xFFFF9A3C)
-                              .withOpacity(AppSettings.warm.value * 0.30),
+              const Positioned.fill(child: AnimatedBg()),
+              Positioned.fill(child: child!),
+              const Positioned.fill(child: DayNightFab()),
+              Positioned.fill(
+                child: ListenableBuilder(
+                  listenable:
+                      Listenable.merge([AppSettings.warm, AppSettings.dim]),
+                  builder: (c, _) => IgnorePointer(
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: ColoredBox(
+                            color: const Color(0xFFFF9A3C)
+                                .withOpacity(AppSettings.warm.value * 0.30),
+                          ),
                         ),
-                      ),
-                      Positioned.fill(
-                        child: ColoredBox(
-                          color: Colors.black
-                              .withOpacity(AppSettings.dim.value),
+                        Positioned.fill(
+                          child: ColoredBox(
+                            color: Colors.black
+                                .withOpacity(AppSettings.dim.value),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -102,27 +106,32 @@ class _ShellState extends State<Shell> {
   Widget page() {
     switch (tab) {
       case 0:
-        return const VocabPage();
+        return const VocabPage(key: ValueKey('vocab-all'));
       case 1:
-        return GrammarPage(onMenu: openMenu);
+        return GrammarPage(key: const ValueKey('grammar'), onMenu: openMenu);
       case 3:
-        return const LibraryPage();
+        return const LibraryPage(key: ValueKey('library'));
       case 4:
-        return const VocabPage(savedOnly: true);
+        return const VocabPage(key: ValueKey('vocab-saved'), savedOnly: true);
       default:
-        return HomePage(goTab: (i) => setState(() => tab = i), onMenu: openMenu);
+        return HomePage(
+            key: const ValueKey('home'),
+            goTab: (i) => setState(() => tab = i),
+            onMenu: openMenu);
     }
   }
 
   void goTab(BuildContext ctx, int i) {
-    Navigator.pop(ctx);
     setState(() => tab = i);
+    key.currentState?.closeDrawer();
   }
 
   void openPage(BuildContext ctx, Widget p) {
-    final nav = Navigator.of(ctx);
-    nav.pop();
-    nav.push(MaterialPageRoute(builder: (_) => p));
+    final nav = Navigator.of(context);
+    key.currentState?.closeDrawer();
+    Future<void>.delayed(const Duration(milliseconds: 220), () {
+      if (mounted) nav.push(MaterialPageRoute(builder: (_) => p));
+    });
   }
 
   Widget item(IconData icon, String label, VoidCallback f,
@@ -144,6 +153,7 @@ class _ShellState extends State<Shell> {
 
   Widget drawer() {
     return Drawer(
+      backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.94),
       child: Builder(
         builder: (ctx) {
           return ListView(
@@ -210,8 +220,8 @@ class _ShellState extends State<Shell> {
     final sel = tab == i;
     final col = sel ? cs.primary : softText(context);
     return Expanded(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: () => setState(() => tab = i),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -237,18 +247,16 @@ class _ShellState extends State<Shell> {
       child: SizedBox(
         height: 108,
         child: Stack(
+          clipBehavior: Clip.none,
           children: [
             Positioned(
               left: 14,
               right: 14,
               bottom: 12,
               height: 70,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cardBg(context),
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: softShadow(context),
-                ),
+              child: Glass(
+                radius: 30,
+                blur: 20,
                 child: Row(
                   children: [
                     navItem(0, Icons.translate, 'শব্দ'),
@@ -261,39 +269,52 @@ class _ShellState extends State<Shell> {
               ),
             ),
             Positioned(
+              bottom: 18,
               left: 0,
               right: 0,
-              bottom: 18,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => setState(() => tab = 2),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 62,
-                      height: 62,
-                      decoration: BoxDecoration(
-                        color: cs.primary,
-                        borderRadius: BorderRadius.circular(22),
-                        boxShadow: [
-                          BoxShadow(
-                            color: cs.primary.withOpacity(0.45),
-                            blurRadius: 16,
-                            offset: const Offset(0, 8),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => setState(() => tab = 2),
+                  child: SizedBox(
+                    width: 74,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 62,
+                          height: 62,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(22),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [cs.primary, head2(context)],
+                            ),
+                            border: Border.all(
+                                color: Colors.white.withOpacity(0.55)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: cs.primary.withOpacity(0.5),
+                                blurRadius: 18,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: const Icon(Icons.home_rounded,
-                          color: Colors.white, size: 34),
+                          child: const Icon(Icons.home_rounded,
+                              color: Colors.white, size: 34),
+                        ),
+                        const SizedBox(height: 3),
+                        Text('হোম',
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color:
+                                    selHome ? cs.primary : softText(context))),
+                      ],
                     ),
-                    const SizedBox(height: 3),
-                    Text('হোম',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: selHome ? cs.primary : softText(context))),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -316,19 +337,10 @@ class _ShellState extends State<Shell> {
               ),
               title: Text(titles[tab],
                   style: const TextStyle(fontWeight: FontWeight.bold)),
-              actions: [
-                IconButton(
-                  icon: Icon(isDark(context)
-                      ? Icons.light_mode
-                      : Icons.dark_mode),
-                  onPressed: () =>
-                      AppSettings.setPreset(isDark(context) ? 0 : 5),
-                ),
-              ],
             )
           : null,
       drawer: drawer(),
-      body: AnimatedBg(child: SafeArea(top: false, bottom: false, child: page())),
+      body: SafeArea(top: false, bottom: false, child: page()),
       bottomNavigationBar: bottomNav(),
     );
   }

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'catalog.dart';
+import 'filters.dart';
 import 'reader.dart';
 import 'style.dart';
 
@@ -96,6 +97,7 @@ const List<List<Color>> _covers = [
 Future<bool> addBookDialog(BuildContext context) async {
   final t = TextEditingController();
   final n = TextEditingController(text: '60');
+  var hasCh = false;
   final u = TextEditingController();
   PickedPdf? picked;
   var busy = false;
@@ -115,13 +117,21 @@ Future<bool> addBookDialog(BuildContext context) async {
                     labelText: 'বইয়ের নাম *', border: OutlineInputBorder()),
               ),
               const SizedBox(height: 10),
-              TextField(
-                controller: n,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                    labelText: 'অধ্যায় সংখ্যা',
-                    border: OutlineInputBorder()),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('এই বইয়ে অধ্যায় সিস্টেম লাগবে'),
+                subtitle: const Text('বন্ধ থাকলে সাধারণ বই হিসেবে পড়বেন'),
+                value: hasCh,
+                onChanged: (v) => set(() => hasCh = v),
               ),
+              if (hasCh)
+                TextField(
+                  controller: n,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                      labelText: 'অধ্যায় সংখ্যা',
+                      border: OutlineInputBorder()),
+                ),
               const SizedBox(height: 10),
               OutlinedButton.icon(
                 icon: const Icon(Icons.picture_as_pdf),
@@ -177,7 +187,7 @@ Future<bool> addBookDialog(BuildContext context) async {
   var url = u.text.trim();
   if (title.isEmpty || (picked == null && url.isEmpty)) return false;
   if (url.isNotEmpty && !url.startsWith('http')) url = 'https://$url';
-  final cnt = (parseNum(n.text) ?? 60).clamp(1, 500).toInt();
+  final cnt = hasCh ? (parseNum(n.text) ?? 60).clamp(1, 500).toInt() : 0;
   await BookDb.add(title, picked?.path, url.isEmpty ? null : url, cnt);
   return true;
 }
@@ -239,7 +249,7 @@ class BookShelfState extends State<BookShelf> {
 
   Widget cover(Map<String, Object?> b) {
     final id = b['id'] as int;
-    final total = (b['chapters'] as int?) ?? 60;
+    final total = (b['chapters'] as int?) ?? 0;
     final done = (b['donec'] as int?) ?? 0;
     final col = _covers[id % _covers.length];
     final thumb = (b['thumb'] as String?) ?? '';
@@ -320,7 +330,21 @@ class BookShelfState extends State<BookShelf> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-              child: Column(
+              child: total == 0
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.menu_book,
+                            size: 18, color: Theme.of(context).colorScheme.primary),
+                        const SizedBox(width: 6),
+                        Text('পড়ুন',
+                            style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: softText(context))),
+                      ],
+                    )
+                  : Column(
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
@@ -469,7 +493,7 @@ class BookPage extends StatefulWidget {
 
 class _BookPageState extends State<BookPage> {
   List<Map<String, Object?>> list = [];
-  late int count = (widget.book['chapters'] as int?) ?? 60;
+  late int count = (widget.book['chapters'] as int?) ?? 0;
   bool loading = true;
   bool hinted = false;
   late String? localPath = widget.book['path'] as String?;
@@ -485,6 +509,14 @@ class _BookPageState extends State<BookPage> {
   }
 
   Future<void> load() async {
+    if (count <= 0) {
+      if (!mounted) return;
+      setState(() {
+        list = [];
+        loading = false;
+      });
+      return;
+    }
     final r = await BookDb.chapters(id, count);
     if (!mounted) return;
     setState(() {
@@ -637,7 +669,7 @@ class _BookPageState extends State<BookPage> {
   }
 
   Future<void> changeCount() async {
-    final c = TextEditingController(text: '$count');
+    final c = TextEditingController(text: '${count > 0 ? count : 60}');
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -658,10 +690,66 @@ class _BookPageState extends State<BookPage> {
       ),
     );
     if (ok != true) return;
-    final n = (parseNum(c.text) ?? count).clamp(1, 500).toInt();
+    final n = (parseNum(c.text) ?? 60).clamp(1, 500).toInt();
     await BookDb.setCount(id, n);
     count = n;
     load();
+  }
+
+  Future<void> chaptersOff() async {
+    await BookDb.setCount(id, 0);
+    count = 0;
+    load();
+  }
+
+  Future<void> gotoPage() async {
+    final n = await askNumber(context, 9999, title: 'কত নম্বর পৃষ্ঠায় যাবেন?');
+    if (n == null) return;
+    openReader(n, '');
+  }
+
+  Widget simpleBody() {
+    final thumb = (widget.book['thumb'] as String?) ?? '';
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 190,
+              height: 250,
+              decoration: cardDeco(context, 26),
+              clipBehavior: Clip.antiAlias,
+              child: thumb.isNotEmpty
+                  ? Image.network(thumb,
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                      errorBuilder: (c, e, s) => const Center(
+                          child: Icon(Icons.picture_as_pdf, size: 64)))
+                  : const Center(child: Icon(Icons.picture_as_pdf, size: 64)),
+            ),
+            const SizedBox(height: 18),
+            Text(title,
+                textAlign: TextAlign.center,
+                style:
+                    const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 18),
+            FilledButton.icon(
+              icon: const Icon(Icons.menu_book),
+              label: const Text('পড়া শুরু করুন'),
+              onPressed: () => openReader(1, ''),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.pin_outlined),
+              label: const Text('পৃষ্ঠা নম্বরে যান'),
+              onPressed: gotoPage,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> deleteBook() async {
@@ -772,16 +860,23 @@ class _BookPageState extends State<BookPage> {
           PopupMenuButton<String>(
             onSelected: (v) {
               if (v == 'bulk') bulk();
-              if (v == 'count') changeCount();
+              if (v == 'count' || v == 'on') changeCount();
+              if (v == 'off') chaptersOff();
               if (v == 'del') deleteBook();
             },
             itemBuilder: (c) => [
-              if (!isCloud)
+              if (!isCloud && count > 0)
                 const PopupMenuItem(
                     value: 'bulk', child: Text('অধ্যায়ের নাম একসঙ্গে বসান')),
-              if (!isCloud)
+              if (!isCloud && count > 0)
                 const PopupMenuItem(
                     value: 'count', child: Text('অধ্যায় সংখ্যা বদলান')),
+              if (!isCloud && count > 0)
+                const PopupMenuItem(
+                    value: 'off', child: Text('অধ্যায় সিস্টেম বন্ধ করুন')),
+              if (!isCloud && count == 0)
+                const PopupMenuItem(
+                    value: 'on', child: Text('অধ্যায় সিস্টেম চালু করুন')),
               PopupMenuItem(
                   value: 'del',
                   child: Text(isCloud ? 'ডাউনলোড করা ফাইল মুছুন' : 'বই মুছুন')),
@@ -791,11 +886,13 @@ class _BookPageState extends State<BookPage> {
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              padding: const EdgeInsets.only(top: 8, bottom: 30),
-              itemCount: list.length,
-              itemBuilder: (c, i) => tile(list[i]),
-            ),
+          : count == 0
+              ? simpleBody()
+              : ListView.builder(
+                  padding: const EdgeInsets.only(top: 8, bottom: 30),
+                  itemCount: list.length,
+                  itemBuilder: (c, i) => tile(list[i]),
+                ),
     );
   }
 }

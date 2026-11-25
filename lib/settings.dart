@@ -5,6 +5,8 @@ import 'vocab.dart';
 
 class AppSettings {
   static final ValueNotifier<int> preset = ValueNotifier(0);
+  static int lastDark = kDefaultDark;
+  static int lastLight = kDefaultLight;
   static final ValueNotifier<int> accent = ValueNotifier(0);
   static final ValueNotifier<double> warm = ValueNotifier(0.0);
   static final ValueNotifier<double> dim = ValueNotifier(0.0);
@@ -15,12 +17,12 @@ class AppSettings {
 
   // 0 মানে থিমের নিজস্ব রঙ
   static const List<int> accents = [
-    0xFFB4532A,
-    0xFF2A7F6B,
-    0xFF2F6DB5,
-    0xFF6A55C8,
-    0xFFD0457F,
-    0xFF8A6D1F,
+    0xFF4DA3FF,
+    0xFFB79CFF,
+    0xFF34E0C4,
+    0xFFFF7EB8,
+    0xFFFFB066,
+    0xFF52E8A0,
   ];
   static const List<int> speeds = [24, 14, 7];
 
@@ -38,8 +40,13 @@ class AppSettings {
     for (final r in rows) {
       m[r['k'] as String] = r['v'] as String;
     }
-    final p = int.tryParse(m['preset'] ?? '') ?? 0;
+    final p = int.tryParse(m['preset2'] ?? '') ?? 0;
     preset.value = (p >= 0 && p < kPresets.length) ? p : 0;
+    if (kPresets[preset.value].dark) {
+      lastDark = preset.value;
+    } else {
+      lastLight = preset.value;
+    }
     accent.value = int.tryParse(m['accent'] ?? '') ?? 0;
     warm.value = double.tryParse(m['warm'] ?? '') ?? 0.0;
     dim.value = double.tryParse(m['dim'] ?? '') ?? 0.0;
@@ -59,8 +66,17 @@ class AppSettings {
 
   static Future<void> setPreset(int i) async {
     preset.value = i;
-    await save('preset', '$i');
+    if (kPresets[i].dark) {
+      lastDark = i;
+    } else {
+      lastLight = i;
+    }
+    await save('preset2', '$i');
   }
+
+  // সূর্য/চাঁদ বাটন: রাত হলে দিনের থিমে, দিন হলে রাতের থিমে
+  static Future<void> toggleDayNight(bool nowDark) =>
+      setPreset(nowDark ? lastLight : lastDark);
 
   static Future<void> setAccent(int c) async {
     accent.value = c;
@@ -126,10 +142,13 @@ class SettingsPage extends StatelessWidget {
         width: w,
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: p.bg,
+          gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [p.bg1, p.bg2]),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-              color: sel ? p.primary : Colors.black12, width: sel ? 3 : 1),
+              color: sel ? p.primary : Colors.white24, width: sel ? 3 : 1),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,7 +203,7 @@ class SettingsPage extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _title('থিম', 'পছন্দের রঙের থিম বেছে নিন'),
+            _title('থিম', 'ক্রিস্টাল থিম বেছে নিন (সূর্য/চাঁদ বাটনেও দিন-রাত বদলায়)'),
             ValueListenableBuilder<int>(
               valueListenable: AppSettings.preset,
               builder: (c, cur, _) => Wrap(
@@ -207,12 +226,12 @@ class SettingsPage extends StatelessWidget {
                     onTap: () => AppSettings.setAccent(0),
                     child: CircleAvatar(
                       radius: 22,
-                      backgroundColor: Colors.black12,
+                      backgroundColor: Colors.grey.shade600,
                       child: cur == 0
-                          ? const Icon(Icons.check, color: Colors.black87)
+                          ? const Icon(Icons.check, color: Colors.white)
                           : const Text('Auto',
                               style: TextStyle(
-                                  fontSize: 11, color: Colors.black87)),
+                                  fontSize: 11, color: Colors.white)),
                     ),
                   ),
                   for (final col in AppSettings.accents)

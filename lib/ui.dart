@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'settings.dart';
+import 'style.dart';
 import 'vocab.dart';
 
 class AnimatedBg extends StatefulWidget {
-  final Widget child;
-  const AnimatedBg({super.key, required this.child});
+  const AnimatedBg({super.key});
   @override
   State<AnimatedBg> createState() => _AnimatedBgState();
 }
@@ -46,24 +46,180 @@ class _AnimatedBgState extends State<AnimatedBg>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: c,
-      builder: (ctx, _) {
-        final bg = Theme.of(ctx).scaffoldBackgroundColor;
-        final pr = Theme.of(ctx).colorScheme.primary;
-        final t = AppSettings.animate.value ? c.value : 0.0;
-        Color tint(double a) => Color.lerp(bg, pr, a)!;
-        return Container(
+    final cur = kPresets[AppSettings.preset.value.clamp(0, kPresets.length - 1)];
+    final pr = Theme.of(context).colorScheme.primary;
+    final h2 = palOf(context).head2;
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: c,
+        builder: (ctx, _) {
+          final t = AppSettings.animate.value ? c.value : 0.0;
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment(-0.4 + 0.5 * t, -1),
+                    end: Alignment(0.4 - 0.5 * t, 1),
+                    colors: [cur.bg1, cur.bg2],
+                  ),
+                ),
+              ),
+              Align(
+                alignment: Alignment(-1.0 + 0.9 * t, -0.8 + 0.3 * t),
+                child: _glow(pr, 420, cur.dark ? 0.30 : 0.22),
+              ),
+              Align(
+                alignment: Alignment(1.0 - 0.8 * t, 0.9 - 0.4 * t),
+                child: _glow(h2, 380, cur.dark ? 0.26 : 0.18),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _glow(Color col, double size, double a) => IgnorePointer(
+        child: Container(
+          width: size,
+          height: size,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment(-1 + t, -1),
-              end: Alignment(1 - t, 1),
-              colors: [tint(0.02 + 0.05 * t), bg, tint(0.07 - 0.05 * t)],
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [col.withOpacity(a), col.withOpacity(0)],
             ),
           ),
-          child: widget.child,
+        ),
+      );
+}
+
+// চালু/বন্ধ সূর্য-চাঁদ বাটন, সব পেজে ভাসমান, টেনে সরানো যায়
+class DayNightFab extends StatefulWidget {
+  const DayNightFab({super.key});
+  @override
+  State<DayNightFab> createState() => _DayNightFabState();
+}
+
+class _DayNightFabState extends State<DayNightFab> {
+  Offset? pos;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (ctx, box) {
+        final size = box.biggest;
+        final top = MediaQuery.of(ctx).padding.top;
+        final base = pos ?? Offset(size.width - 52, size.height * 0.30);
+        final x = base.dx.clamp(4.0, size.width - 48.0).toDouble();
+        final y = base.dy.clamp(top + 4, size.height - 120.0).toDouble();
+        final dark = isDark(ctx);
+        final pr = Theme.of(ctx).colorScheme.primary;
+        return Stack(
+          children: [
+            Positioned(
+              left: x,
+              top: y,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => AppSettings.toggleDayNight(dark),
+                onPanUpdate: (d) => setState(() => pos = Offset(x, y) + d.delta),
+                child: Opacity(
+                  opacity: 0.92,
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          pr.withOpacity(0.95),
+                          palOf(ctx).head2.withOpacity(0.85)
+                        ],
+                      ),
+                      border: Border.all(
+                          color: Colors.white.withOpacity(0.5), width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                            color: pr.withOpacity(0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4)),
+                      ],
+                    ),
+                    child: Icon(dark ? Icons.light_mode : Icons.dark_mode,
+                        color: Colors.white, size: 22),
+                  ),
+                ),
+              ),
+            ),
+          ],
         );
       },
+    );
+  }
+}
+
+// ওয়েবসাইট/অ্যাপের নামের সঙ্গে মেলানো নিজস্ব লোগো
+class GenLogo extends StatelessWidget {
+  final String name;
+  final String hint;
+  final double size;
+  const GenLogo({super.key, required this.name, this.hint = '', this.size = 56});
+
+  IconData? _icon(String k) {
+    bool has(List<String> w) => w.any((e) => k.contains(e));
+    if (has(['dict', 'অভিধান', 'শব্দ'])) return Icons.menu_book;
+    if (has(['translat', 'papago', 'অনুবাদ'])) return Icons.translate;
+    if (has(['youtube', 'video', 'ভিডিও'])) return Icons.play_circle_fill;
+    if (has(['topik', 'exam', 'test', 'পরীক্ষা', 'eps'])) return Icons.school;
+    if (has(['grammar', 'ব্যাকরণ', 'গ্রামার'])) return Icons.rule;
+    if (has(['news', 'খবর'])) return Icons.newspaper;
+    if (has(['music', 'song', 'গান'])) return Icons.music_note;
+    if (has(['chat', 'talk', 'চ্যাট'])) return Icons.chat_bubble;
+    if (has(['book', 'বই', 'pdf'])) return Icons.auto_stories;
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var h = 0;
+    for (final r in name.runes) {
+      h = (h * 31 + r) & 0x7fffffff;
+    }
+    final hue = (h % 360).toDouble();
+    final c1 = HSLColor.fromAHSL(1, hue, 0.62, 0.50).toColor();
+    final c2 = HSLColor.fromAHSL(1, (hue + 45) % 360, 0.70, 0.38).toColor();
+    final ic = _icon('${name.toLowerCase()} ${hint.toLowerCase()}');
+    final letter = name.trim().isEmpty ? '?' : name.trim().characters.first.toUpperCase();
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(size * 0.28),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [c1, c2],
+        ),
+        border: Border.all(color: Colors.white.withOpacity(0.35)),
+        boxShadow: [
+          BoxShadow(
+              color: c2.withOpacity(0.35),
+              blurRadius: 8,
+              offset: const Offset(0, 3)),
+        ],
+      ),
+      child: ic != null
+          ? Icon(ic, color: Colors.white, size: size * 0.55)
+          : Text(letter,
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: size * 0.5,
+                  fontWeight: FontWeight.bold)),
     );
   }
 }
