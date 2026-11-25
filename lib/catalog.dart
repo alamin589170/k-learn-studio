@@ -102,7 +102,6 @@ class Catalog {
         final cl = e['chapter_list'];
         var count = int.tryParse('${e['chapters']}') ?? 0;
         if (cl is List && cl.length > count) count = cl.length;
-        if (count < 1) count = 1;
         final th = '${e['thumb'] ?? ''}'.trim();
         final thumb = th.isEmpty ? driveThumb(id) : th;
         final ex = await db.query('pdf_books',
