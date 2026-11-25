@@ -3,19 +3,22 @@ import 'package:sqflite/sqflite.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'catalog.dart';
 import 'style.dart';
+import 'ui.dart';
+import 'webapp.dart';
 
 // [নাম, ছোট বিবরণ, Play Store প্যাকেজ, ওয়েব ঠিকানা]
 const List<List<String>> _starterApps = [
   ['Papago', 'Naver-এর অনুবাদ', 'com.naver.labs.translator', 'https://papago.naver.com'],
-  ['Naver Dictionary', 'কোরিয়ান শব্দের অর্থ', 'com.nhn.android.naverdic', 'https://dict.naver.com'],
+  ['Naver Dictionary', 'কোরিয়ান শব্দের অর্থ', 'com.nhn.android.naverdic', 'https://m.dict.naver.com'],
   ['Google Translate', 'বাংলা-কোরিয়ান অনুবাদ', 'com.google.android.apps.translate', 'https://translate.google.com'],
-  ['Duolingo', 'গেমের মতো ভাষা শেখা', 'com.duolingo', ''],
+  ['Duolingo', 'গেমের মতো ভাষা শেখা', 'com.duolingo', 'https://www.duolingo.com'],
   ['LingoDeer', 'কোরিয়ান কোর্স', 'com.lingodeer', ''],
-  ['Memrise', 'শব্দ মুখস্থ করা', 'com.memrise.android.memrisecompanion', ''],
+  ['Memrise', 'শব্দ মুখস্থ করা', 'com.memrise.android.memrisecompanion', 'https://app.memrise.com'],
   ['HelloTalk', 'ভাষা বিনিময় চ্যাট', 'com.hellotalk', ''],
   ['EPS Books', 'EPS-TOPIK বই', 'com.coderebornx.epsbooks', ''],
   ['YouTube', 'কোরিয়ান শেখার ভিডিও', 'com.google.android.youtube', 'https://www.youtube.com/results?search_query=learn+korean'],
   ['TOPIK অফিসিয়াল', 'পরীক্ষার তথ্য', '', 'https://www.topik.go.kr'],
+  ['Talk To Me In Korean', 'কোরিয়ান পাঠ', '', 'https://talktomeinkorean.com'],
 ];
 
 class AppItem {
@@ -130,9 +133,17 @@ class _ConnectedPageState extends State<ConnectedPage> {
   String playUrl(String pkg) =>
       'https://play.google.com/store/apps/details?id=$pkg';
 
+  void runInside(AppItem a) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (_) => WebAppPage(title: a.name, url: a.url)),
+    );
+  }
+
   void openApp(AppItem a) {
     if (a.pkg.isEmpty && a.url.isNotEmpty) {
-      go(a.url);
+      runInside(a);
       return;
     }
     showModalBottomSheet<void>(
@@ -145,28 +156,43 @@ class _ConnectedPageState extends State<ConnectedPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(a.name,
-                  style: const TextStyle(
-                      fontSize: 22, fontWeight: FontWeight.bold)),
-              if (a.sub.isNotEmpty)
-                Text(a.sub, style: TextStyle(color: softText(context))),
-              const SizedBox(height: 14),
-              FilledButton.icon(
-                icon: const Icon(Icons.shop),
-                label: const Text('Play Store-এ খুলুন (ইনস্টল থাকলে Open চাপুন)'),
-                onPressed: () {
-                  Navigator.pop(c);
-                  go(playUrl(a.pkg));
-                },
+              Row(
+                children: [
+                  icon(a, 0, 52),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(a.name,
+                            style: const TextStyle(
+                                fontSize: 22, fontWeight: FontWeight.bold)),
+                        if (a.sub.isNotEmpty)
+                          Text(a.sub,
+                              style: TextStyle(color: softText(context))),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              if (a.url.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.language),
-                  label: const Text('ওয়েবসাইটে খুলুন (ইনস্টল ছাড়া)'),
+              const SizedBox(height: 14),
+              if (a.url.isNotEmpty)
+                FilledButton.icon(
+                  icon: const Icon(Icons.play_circle_fill),
+                  label: const Text('এই অ্যাপের ভেতরেই চালান (ইনস্টল লাগবে না)'),
                   onPressed: () {
                     Navigator.pop(c);
-                    go(a.url);
+                    runInside(a);
+                  },
+                ),
+              if (a.pkg.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.shop),
+                  label: const Text('Play Store থেকে ইনস্টল / খুলুন'),
+                  onPressed: () {
+                    Navigator.pop(c);
+                    go(playUrl(a.pkg));
                   },
                 ),
               ],
@@ -285,31 +311,14 @@ class _ConnectedPageState extends State<ConnectedPage> {
     load();
   }
 
-  Widget icon(AppItem a, int i) {
-    final col = _cols[i % _cols.length];
-    final letter = a.name.isEmpty ? '?' : a.name.characters.first.toUpperCase();
-    final fallback = Container(
-      width: 60,
-      height: 60,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [col, col.withOpacity(0.7)],
-        ),
-      ),
-      child: Text(letter,
-          style: const TextStyle(
-              color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
-    );
+  Widget icon(AppItem a, int i, [double size = 60]) {
+    final fallback = GenLogo(name: a.name, hint: a.sub, size: size);
     if (a.icon.isEmpty) return fallback;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(size * 0.3),
       child: Image.network(a.icon,
-          width: 60,
-          height: 60,
+          width: size,
+          height: size,
           fit: BoxFit.cover,
           errorBuilder: (c, e, s) => fallback),
     );
@@ -331,7 +340,7 @@ class _ConnectedPageState extends State<ConnectedPage> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                   child: Text(
-                      'কোরিয়ান শেখার সহায়ক অ্যাপ। চাপলে Play Store-এর পাতা খুলবে, ইনস্টল করা থাকলে সেখানে Open চাপুন। যেগুলোর ওয়েবসাইট আছে সেগুলো ইনস্টল ছাড়াই খোলা যায়।',
+                      'কোরিয়ান শেখার সহায়ক অ্যাপ। যেগুলোর ওয়েব সংস্করণ আছে সেগুলো এই অ্যাপের ভেতরেই চলে, ইনস্টল লাগে না। অন্যগুলো Play Store থেকে ইনস্টল করা যাবে।',
                       style: TextStyle(fontSize: 13, color: softText(context))),
                 ),
                 GridView.count(
@@ -350,8 +359,8 @@ class _ConnectedPageState extends State<ConnectedPage> {
                           children: [
                             Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: cardDeco(context, 24),
-                              child: icon(apps[i], i),
+                              decoration: cardDeco(context, 26),
+                              child: icon(apps[i], i, 62),
                             ),
                             const SizedBox(height: 6),
                             Text(apps[i].name,
