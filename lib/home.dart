@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'connected.dart';
+import 'flags.dart';
 import 'flashcards.dart';
 import 'hub.dart';
 import 'library.dart';
@@ -47,8 +48,9 @@ class _HomePageState extends State<HomePage> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.16),
+          color: Colors.white.withOpacity(0.14),
           borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white.withOpacity(0.28)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,44 +70,59 @@ class _HomePageState extends State<HomePage> {
 
   Widget header() {
     final top = MediaQuery.of(context).padding.top;
-    return Container(
-      padding: EdgeInsets.fromLTRB(20, top + 8, 20, 24),
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(36)),
-        gradient: headGradient(context),
-        boxShadow: softShadow(context),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.menu, color: Colors.white),
-                onPressed: widget.onMenu,
-              ),
-              const Spacer(),
-              const Icon(Icons.translate, color: Colors.white70),
-            ],
-          ),
-          const SizedBox(height: 8),
-          const Text('K-Learn Studio',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          const Text('বাংলা থেকে কোরিয়ান, সহজে শিখুন',
-              style: TextStyle(color: Colors.white70, fontSize: 15)),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              stat('মোট শব্দ', '$total'),
-              const SizedBox(width: 12),
-              stat('সংরক্ষিত শব্দ', '$saved'),
-            ],
-          ),
-        ],
+    final p = palOf(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(12, top + 8, 12, 0),
+      child: Glass(
+        radius: 34,
+        blur: 20,
+        padding: const EdgeInsets.fromLTRB(14, 8, 16, 20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            p.head1.withOpacity(0.78),
+            p.head2.withOpacity(0.55),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  onPressed: widget.onMenu,
+                ),
+                const Spacer(),
+                const Icon(Icons.auto_awesome, color: Colors.white70),
+                const SizedBox(width: 6),
+              ],
+            ),
+            const Padding(
+              padding: EdgeInsets.only(left: 6),
+              child: Text('K-Learn Studio',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold)),
+            ),
+            const Padding(
+              padding: EdgeInsets.only(left: 6, top: 4),
+              child: Text('বাংলা থেকে কোরিয়ান, সহজে শিখুন',
+                  style: TextStyle(color: Colors.white70, fontSize: 15)),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const SizedBox(width: 6),
+                stat('মোট শব্দ', '$total'),
+                const SizedBox(width: 12),
+                stat('সংরক্ষিত শব্দ', '$saved'),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -114,8 +131,9 @@ class _HomePageState extends State<HomePage> {
       VoidCallback onTap) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: Container(
-        decoration: cardDeco(context, 26),
+      child: Glass(
+        radius: 26,
+        blur: 14,
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -160,7 +178,8 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.only(bottom: 30),
         children: [
           header(),
-          const SizedBox(height: 18),
+          const FlagsBanner(),
+          const SizedBox(height: 12),
           tile(Icons.translate, cs.primary, 'শব্দভাণ্ডার',
               'ছবি, উচ্চারণ ও অর্থসহ শব্দ', () => widget.goTab(0)),
           tile(Icons.style, const Color(0xFF2A7F6B), '3D ফ্ল্যাশকার্ড',

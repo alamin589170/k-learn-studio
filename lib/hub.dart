@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'catalog.dart';
 import 'links_data.dart';
 import 'style.dart';
+import 'ui.dart';
 import 'vocab.dart';
 
 class SiteLink {
@@ -294,42 +295,70 @@ class _HubPageState extends State<HubPage> {
     );
   }
 
-  Widget icon(SiteLink s) {
+  Widget icon(SiteLink s, double size) {
     final host = Uri.tryParse(s.url)?.host ?? '';
-    final letter = s.title.isEmpty ? '?' : s.title.characters.first;
-    final fallback = Text(letter,
-        style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.primary));
-    if (host.isEmpty) return fallback;
-    return Image.network(
-      'https://www.google.com/s2/favicons?domain=$host&sz=128',
-      width: 40,
-      height: 40,
-      errorBuilder: (c, e, st) => fallback,
+    final gen = GenLogo(name: s.title, hint: s.url, size: size);
+    if (host.isEmpty) return gen;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        children: [
+          gen,
+          Positioned.fill(
+            child: Image.network(
+              'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&url=https://$host&size=128',
+              fit: BoxFit.contain,
+              errorBuilder: (c, e, st) => const SizedBox.shrink(),
+              frameBuilder: (c, child, frame, sync) {
+                if (frame == null) return const SizedBox.shrink();
+                return Container(
+                  padding: EdgeInsets.all(size * 0.14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(size * 0.28),
+                    border: Border.all(color: Colors.white70),
+                  ),
+                  child: child,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget tile(SiteLink s) {
+    final pr = Theme.of(context).colorScheme.primary;
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => open(s),
       onLongPress: () => options(s),
       child: Column(
         children: [
-          Container(
-            width: 68,
-            height: 68,
-            alignment: Alignment.center,
-            decoration: cardDeco(context, 20),
-            child: icon(s),
+          Glass(
+            radius: 26,
+            blur: 12,
+            padding: const EdgeInsets.all(10),
+            child: icon(s, 64),
           ),
-          const SizedBox(height: 6),
-          Text(s.title,
-              maxLines: 2,
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              color: pr.withOpacity(0.18),
+              border: Border.all(color: pr.withOpacity(0.45)),
+            ),
+            child: Text(s.title,
+                maxLines: 2,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 12.5, fontWeight: FontWeight.w700, height: 1.15)),
+          ),
         ],
       ),
     );
@@ -358,15 +387,18 @@ class _HubPageState extends State<HubPage> {
         child: Text(c,
             style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
       ));
-      children.add(GridView.count(
+      children.add(GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        crossAxisCount: 4,
-        mainAxisSpacing: 14,
-        crossAxisSpacing: 8,
-        childAspectRatio: 0.78,
-        children: [for (final s in items) tile(s)],
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          mainAxisSpacing: 14,
+          crossAxisSpacing: 12,
+          mainAxisExtent: 150,
+        ),
+        itemCount: items.length,
+        itemBuilder: (c, i) => tile(items[i]),
       ));
     }
 
