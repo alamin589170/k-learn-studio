@@ -224,11 +224,7 @@ class _VocabPageState extends State<VocabPage> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Container(
-        decoration: BoxDecoration(
-          color: cardBg(context),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: softShadow(context),
-        ),
+        decoration: cardDeco(context, 24),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -351,7 +347,7 @@ class _VocabPageState extends State<VocabPage> {
           Positioned(
             right: 16,
             bottom: 16,
-            child: FloatingActionButton(
+            child: FloatingActionButton.small(
               heroTag: 'add_word_fab',
               onPressed: () => edit(),
               child: const Icon(Icons.add),

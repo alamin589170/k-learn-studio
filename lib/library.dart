@@ -1,24 +1,26 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
+import 'catalog.dart';
 import 'reader.dart';
 import 'style.dart';
-import 'vocab.dart';
 
 class BookDb {
-  static Future<Database> _db() async {
-    final db = await Db.get();
-    await db.execute(
-        'CREATE TABLE IF NOT EXISTS pdf_books(id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, path TEXT, url TEXT, chapters INTEGER NOT NULL DEFAULT 60, ts INTEGER NOT NULL)');
-    await db.execute(
-        'CREATE TABLE IF NOT EXISTS book_chapters(book_id INTEGER NOT NULL, no INTEGER NOT NULL, title TEXT NOT NULL, page INTEGER NOT NULL DEFAULT 0, done INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(book_id, no))');
-    return db;
+  static Future<Database> _db() => openBookDb();
+
+  static Future<List<Map<String, Object?>>> books({bool? cloud}) async {
+    final db = await _db();
+    final where = cloud == null
+        ? ''
+        : (cloud ? 'WHERE b.cid IS NOT NULL' : 'WHERE b.cid IS NULL');
+    return db.rawQuery(
+        'SELECT b.*, (SELECT COUNT(*) FROM book_chapters c WHERE c.book_id = b.id AND c.done = 1 AND c.no <= b.chapters) AS donec FROM pdf_books b $where ORDER BY b.cid IS NULL, b.id DESC');
   }
 
-  static Future<List<Map<String, Object?>>> books() async {
+  static Future<void> setPath(int id, String? path) async {
     final db = await _db();
-    return db.rawQuery(
-        'SELECT b.*, (SELECT COUNT(*) FROM book_chapters c WHERE c.book_id = b.id AND c.done = 1 AND c.no <= b.chapters) AS donec FROM pdf_books b ORDER BY b.id DESC');
+    await db.update('pdf_books', {'path': path},
+        where: 'id = ?', whereArgs: [id]);
   }
 
   static Future<void> add(
@@ -182,7 +184,13 @@ Future<bool> addBookDialog(BuildContext context) async {
 
 class BookShelf extends StatefulWidget {
   final int? limit;
-  const BookShelf({super.key, this.limit});
+  final bool? cloud;
+  final String emptyText;
+  const BookShelf(
+      {super.key,
+      this.limit,
+      this.cloud,
+      this.emptyText = 'এখনো কোনো বই নেই।'});
   @override
   State<BookShelf> createState() => BookShelfState();
 }
@@ -194,13 +202,20 @@ class BookShelfState extends State<BookShelf> {
   @override
   void initState() {
     super.initState();
+    Catalog.changed.addListener(reload);
     reload();
+  }
+
+  @override
+  void dispose() {
+    Catalog.changed.removeListener(reload);
+    super.dispose();
   }
 
   Future<void> reload() async {
     List<Map<String, Object?>> r = [];
     try {
-      r = await BookDb.books();
+      r = await BookDb.books(cloud: widget.cloud);
     } catch (_) {}
     if (!mounted) return;
     setState(() {
@@ -215,46 +230,90 @@ class BookShelfState extends State<BookShelf> {
     reload();
   }
 
+  Widget badge(IconData icon) => Container(
+        padding: const EdgeInsets.all(5),
+        decoration:
+            const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
+        child: Icon(icon, size: 16, color: Colors.white),
+      );
+
   Widget cover(Map<String, Object?> b) {
     final id = b['id'] as int;
     final total = (b['chapters'] as int?) ?? 60;
     final done = (b['donec'] as int?) ?? 0;
     final col = _covers[id % _covers.length];
+    final thumb = (b['thumb'] as String?) ?? '';
+    final isCloud = b['cid'] != null;
+    final path = (b['path'] as String?) ?? '';
+    final hasFile = path.isNotEmpty;
     return GestureDetector(
       onTap: () => open(b),
       child: Container(
-        decoration: BoxDecoration(
-          color: cardBg(context),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: softShadow(context),
-        ),
+        decoration: cardDeco(context, 24),
         child: Column(
           children: [
             Expanded(
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(24)),
-                  gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: col),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              child: ClipRRect(
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(24)),
+                child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    const Icon(Icons.picture_as_pdf,
-                        color: Colors.white, size: 30),
-                    const Spacer(),
-                    Text('${b['title']}',
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold)),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: col),
+                      ),
+                    ),
+                    if (thumb.isNotEmpty)
+                      Image.network(
+                        thumb,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
+                        errorBuilder: (c, e, s) => const SizedBox.shrink(),
+                      )
+                    else
+                      const Positioned(
+                        top: 12,
+                        left: 12,
+                        child: Icon(Icons.picture_as_pdf,
+                            color: Colors.white, size: 30),
+                      ),
+                    const Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, Colors.black87],
+                            stops: [0.5, 1],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 12,
+                      right: 12,
+                      bottom: 10,
+                      child: Text('${b['title']}',
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: badge(hasFile
+                          ? Icons.download_done
+                          : (isCloud
+                              ? Icons.cloud_download_outlined
+                              : Icons.phone_android)),
+                    ),
                   ],
                 ),
               ),
@@ -294,12 +353,8 @@ class BookShelfState extends State<BookShelf> {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: cardBg(context),
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: const Text(
-            'এখনো কোনো বই নেই। লাইব্রেরি ট্যাবে গিয়ে "বই যোগ" চাপুন এবং আপনার PDF বই বেছে নিন।'),
+        decoration: cardDeco(context, 24),
+        child: Text(widget.emptyText),
       );
     }
     return GridView.count(
@@ -309,7 +364,7 @@ class BookShelfState extends State<BookShelf> {
       crossAxisCount: 2,
       mainAxisSpacing: 14,
       crossAxisSpacing: 14,
-      childAspectRatio: 0.78,
+      childAspectRatio: 0.74,
       children: [for (final b in books) cover(b)],
     );
   }
@@ -322,43 +377,85 @@ class LibraryPage extends StatefulWidget {
 }
 
 class _LibraryPageState extends State<LibraryPage> {
-  final GlobalKey<BookShelfState> shelf = GlobalKey<BookShelfState>();
+  final GlobalKey<BookShelfState> mine = GlobalKey<BookShelfState>();
+  bool busy = false;
 
   Future<void> add() async {
     final done = await addBookDialog(context);
-    if (done) shelf.currentState?.reload();
+    if (done) mine.currentState?.reload();
   }
+
+  Future<void> refresh() async {
+    if (busy) return;
+    setState(() => busy = true);
+    final ok = await Catalog.sync();
+    if (!mounted) return;
+    setState(() => busy = false);
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('নতুন বইয়ের তালিকা আনা যায়নি। ইন্টারনেট দেখুন।')));
+    }
+  }
+
+  Widget head(String t, String sub, Widget? trailing) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(t,
+                      style: const TextStyle(
+                          fontSize: 22, fontWeight: FontWeight.bold)),
+                  Text(sub,
+                      style: TextStyle(fontSize: 13, color: softText(context))),
+                ],
+              ),
+            ),
+            if (trailing != null) trailing,
+          ],
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.only(top: 8, bottom: 40),
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              const Expanded(
-                child: Text('বইয়ের সংগ্রহ',
-                    style:
-                        TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              ),
-              FilledButton.icon(
-                onPressed: add,
-                icon: const Icon(Icons.add),
-                label: const Text('বই যোগ'),
-              ),
-            ],
+    return RefreshIndicator(
+      onRefresh: refresh,
+      child: ListView(
+        padding: const EdgeInsets.only(top: 4, bottom: 40),
+        children: [
+          if (busy) const LinearProgressIndicator(),
+          head(
+            'অ্যাপের বই',
+            'সবার জন্য। চাপলে প্রথমবার ডাউনলোড হয়ে ফোনে সেভ হবে।',
+            IconButton(
+              icon: const Icon(Icons.sync),
+              tooltip: 'নতুন বই আনুন',
+              onPressed: refresh,
+            ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
-          child: Text(
-              'বই চাপলে অধ্যায়ের তালিকা খুলবে। PDF অ্যাপের ভেতরেই পড়া যায় এবং লেখা সিলেক্ট করে কপি করা যায়।',
-              style: TextStyle(fontSize: 13, color: softText(context))),
-        ),
-        BookShelf(key: shelf),
-      ],
+          const BookShelf(
+            cloud: true,
+            emptyText:
+                'এখনো কোনো বই আসেনি। ইন্টারনেট চালু করে এই পাতা নিচে টেনে রিফ্রেশ করুন।',
+          ),
+          head(
+            'আমার নিজের বই',
+            'ফোন থেকে বা লিংক দিয়ে নিজের PDF যোগ করুন।',
+            FilledButton.icon(
+              onPressed: add,
+              icon: const Icon(Icons.add),
+              label: const Text('বই যোগ'),
+            ),
+          ),
+          BookShelf(
+            key: mine,
+            cloud: false,
+            emptyText: 'এখনো নিজের কোনো বই যোগ করেননি।',
+          ),
+        ],
+      ),
     );
   }
 }
@@ -375,7 +472,9 @@ class _BookPageState extends State<BookPage> {
   late int count = (widget.book['chapters'] as int?) ?? 60;
   bool loading = true;
   bool hinted = false;
+  late String? localPath = widget.book['path'] as String?;
 
+  bool get isCloud => widget.book['cid'] != null;
   int get id => widget.book['id'] as int;
   String get title => '${widget.book['title']}';
 
@@ -394,13 +493,30 @@ class _BookPageState extends State<BookPage> {
     });
   }
 
-  void openReader(int page, String sub) {
+  Future<void> openReader(int page, String sub) async {
+    var path = localPath;
+    final cid = widget.book['cid'] as String?;
+    final missing = path == null || path.isEmpty || !File(path).existsSync();
+    if (missing && cid != null) {
+      final got = await downloadDrivePdf(context, cid, title);
+      if (!mounted) return;
+      if (got == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                'ডাউনলোড হয়নি। ইন্টারনেট দেখুন। ফাইলটি Google Drive-এ "Anyone with the link" করা আছে কিনা দেখুন।')));
+        return;
+      }
+      path = got;
+      localPath = got;
+      await BookDb.setPath(id, got);
+    }
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => PdfReaderPage(
           title: sub.isEmpty ? title : '$title – $sub',
-          path: widget.book['path'] as String?,
+          path: path,
           url: widget.book['url'] as String?,
           startPage: page < 1 ? 1 : page,
         ),
@@ -552,8 +668,10 @@ class _BookPageState extends State<BookPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('বইটি মুছবেন?'),
-        content: Text(title),
+        title: Text(isCloud ? 'ডাউনলোড করা ফাইল মুছবেন?' : 'বইটি মুছবেন?'),
+        content: Text(isCloud
+            ? '$title\nফোনের জায়গা খালি হবে। পরে চাপলে আবার ডাউনলোড হবে।'
+            : title),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -565,6 +683,22 @@ class _BookPageState extends State<BookPage> {
       ),
     );
     if (ok != true) return;
+    if (isCloud) {
+      final path = localPath;
+      if (path != null && path.isNotEmpty) {
+        try {
+          final f = File(path);
+          if (await f.exists()) await f.delete();
+        } catch (_) {}
+      }
+      await BookDb.setPath(id, null);
+      localPath = null;
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('ফাইল মোছা হয়েছে')));
+      }
+      return;
+    }
     await BookDb.delete(widget.book);
     if (mounted) Navigator.pop(context);
   }
@@ -578,17 +712,13 @@ class _BookPageState extends State<BookPage> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Container(
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: softShadow(context),
-        ),
+        decoration: cardDeco(context, 24, bg),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(24),
             onTap: () => openChapter(c),
-            onLongPress: () => editChapter(c),
+            onLongPress: isCloud ? null : () => editChapter(c),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Row(
@@ -645,10 +775,16 @@ class _BookPageState extends State<BookPage> {
               if (v == 'count') changeCount();
               if (v == 'del') deleteBook();
             },
-            itemBuilder: (c) => const [
-              PopupMenuItem(value: 'bulk', child: Text('অধ্যায়ের নাম একসঙ্গে বসান')),
-              PopupMenuItem(value: 'count', child: Text('অধ্যায় সংখ্যা বদলান')),
-              PopupMenuItem(value: 'del', child: Text('বই মুছুন')),
+            itemBuilder: (c) => [
+              if (!isCloud)
+                const PopupMenuItem(
+                    value: 'bulk', child: Text('অধ্যায়ের নাম একসঙ্গে বসান')),
+              if (!isCloud)
+                const PopupMenuItem(
+                    value: 'count', child: Text('অধ্যায় সংখ্যা বদলান')),
+              PopupMenuItem(
+                  value: 'del',
+                  child: Text(isCloud ? 'ডাউনলোড করা ফাইল মুছুন' : 'বই মুছুন')),
             ],
           ),
         ],

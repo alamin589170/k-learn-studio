@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'about.dart';
+import 'catalog.dart';
 import 'connected.dart';
 import 'flashcards.dart';
 import 'grammar.dart';
@@ -9,28 +10,11 @@ import 'library.dart';
 import 'quiz.dart';
 import 'settings.dart';
 import 'style.dart';
+import 'sync.dart';
 import 'ui.dart';
 import 'vocabulary.dart';
 
 void main() => runApp(const KLearnApp());
-
-ThemeData buildTheme(int seed, Brightness b) {
-  final dark = b == Brightness.dark;
-  final base = ColorScheme.fromSeed(seedColor: Color(seed), brightness: b);
-  final cs = base.copyWith(
-    surface: dark ? const Color(0xFF14243A) : kCream,
-  );
-  return ThemeData(
-    useMaterial3: true,
-    colorScheme: cs,
-    scaffoldBackgroundColor: cs.surface,
-    appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.transparent,
-      scrolledUnderElevation: 0,
-      centerTitle: true,
-    ),
-  );
-}
 
 class KLearnApp extends StatefulWidget {
   const KLearnApp({super.key});
@@ -43,30 +27,52 @@ class _KLearnAppState extends State<KLearnApp> {
   void initState() {
     super.initState();
     AppSettings.load().catchError((_) {});
+    Catalog.autoOnce();
+    SyncService.autoOnce();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<int>(
-      valueListenable: AppSettings.seed,
-      builder: (c1, seed, _) => ValueListenableBuilder<ThemeMode>(
-        valueListenable: AppSettings.mode,
-        builder: (c2, mode, __) => ValueListenableBuilder<double>(
-          valueListenable: AppSettings.textScale,
-          builder: (c3, scale, ___) => MaterialApp(
-            title: 'K-Learn Studio',
-            debugShowCheckedModeBanner: false,
-            themeMode: mode,
-            theme: buildTheme(seed, Brightness.light),
-            darkTheme: buildTheme(seed, Brightness.dark),
-            builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(context)
-                  .copyWith(textScaler: TextScaler.linear(scale)),
-              child: child!,
-            ),
-            home: const Shell(),
+    return ListenableBuilder(
+      listenable: Listenable.merge(
+          [AppSettings.preset, AppSettings.accent, AppSettings.textScale]),
+      builder: (context, _) => MaterialApp(
+        title: 'K-Learn Studio',
+        debugShowCheckedModeBanner: false,
+        theme: buildTheme(
+            kPresets[AppSettings.preset.value], AppSettings.accent.value),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(AppSettings.textScale.value)),
+          child: Stack(
+            children: [
+              child!,
+              ListenableBuilder(
+                listenable:
+                    Listenable.merge([AppSettings.warm, AppSettings.dim]),
+                builder: (c, _) => IgnorePointer(
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: ColoredBox(
+                          color: const Color(0xFFFF9A3C)
+                              .withOpacity(AppSettings.warm.value * 0.30),
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: ColoredBox(
+                          color: Colors.black
+                              .withOpacity(AppSettings.dim.value),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
+        home: const Shell(),
       ),
     );
   }
@@ -140,17 +146,12 @@ class _ShellState extends State<Shell> {
     return Drawer(
       child: Builder(
         builder: (ctx) {
-          final cs = Theme.of(ctx).colorScheme;
           return ListView(
             padding: EdgeInsets.zero,
             children: [
               Container(
                 padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [kNavy, Color.lerp(kNavy, cs.primary, 0.6)!],
-                  ),
-                ),
+                decoration: BoxDecoration(gradient: headGradient(ctx)),
                 child: const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -159,9 +160,12 @@ class _ShellState extends State<Shell> {
                             color: Colors.white,
                             fontSize: 26,
                             fontWeight: FontWeight.bold)),
-                    SizedBox(height: 4),
-                    Text('by MD Alamin',
-                        style: TextStyle(color: Colors.white70, fontSize: 13)),
+                    SizedBox(height: 8),
+                    Text('MD Alamin Shagor',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -317,8 +321,8 @@ class _ShellState extends State<Shell> {
                   icon: Icon(isDark(context)
                       ? Icons.light_mode
                       : Icons.dark_mode),
-                  onPressed: () => AppSettings.setMode(
-                      isDark(context) ? ThemeMode.light : ThemeMode.dark),
+                  onPressed: () =>
+                      AppSettings.setPreset(isDark(context) ? 0 : 5),
                 ),
               ],
             )

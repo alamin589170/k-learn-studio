@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'catalog.dart';
 import 'links_data.dart';
+import 'style.dart';
 import 'vocab.dart';
 
 class SiteLink {
   int? id;
+  bool shared;
   String cat, title, sub, url;
   SiteLink(
       {this.id,
+      this.shared = false,
       required this.cat,
       required this.title,
       this.sub = '',
@@ -50,8 +54,19 @@ class HubDb {
 
   static Future<List<SiteLink>> all() async {
     final db = await _open();
+    await openBookDb();
     final rows = await db.query('websites', orderBy: 'id ASC');
-    return rows.map((m) => SiteLink.fromMap(m)).toList();
+    final shared = await db.query('cat_links', orderBy: 'id ASC');
+    return [
+      ...shared.map((m) => SiteLink(
+            shared: true,
+            cat: (m['cat'] ?? '') as String,
+            title: (m['title'] ?? '') as String,
+            sub: (m['sub'] ?? '') as String,
+            url: (m['url'] ?? '') as String,
+          )),
+      ...rows.map((m) => SiteLink.fromMap(m)),
+    ];
   }
 
   static Future<void> insert(SiteLink s) async {
@@ -84,7 +99,14 @@ class _HubPageState extends State<HubPage> {
   @override
   void initState() {
     super.initState();
+    Catalog.changed.addListener(load);
     load();
+  }
+
+  @override
+  void dispose() {
+    Catalog.changed.removeListener(load);
+    super.dispose();
   }
 
   Future<void> load() async {
@@ -207,27 +229,107 @@ class _HubPageState extends State<HubPage> {
     load();
   }
 
-  Widget tile(SiteLink s) {
-    return ListTile(
-      leading: const Icon(Icons.language),
-      title: Text(s.title),
-      subtitle: Text(
-        s.sub.isEmpty ? s.url : '${s.sub}\n${s.url}',
-        maxLines: 3,
-        overflow: TextOverflow.ellipsis,
+  void options(SiteLink s) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (c) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(s.title,
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
+                  if (s.sub.isNotEmpty) Text(s.sub),
+                  Text(s.url,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12, color: softText(context))),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.open_in_new),
+              title: const Text('খুলুন'),
+              onTap: () {
+                Navigator.pop(c);
+                open(s);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy),
+              title: const Text('ঠিকানা কপি'),
+              onTap: () {
+                Navigator.pop(c);
+                copy(s);
+              },
+            ),
+            if (!s.shared) ...[
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text('সম্পাদনা'),
+                onTap: () {
+                  Navigator.pop(c);
+                  edit(s);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: const Text('মুছুন'),
+                onTap: () {
+                  Navigator.pop(c);
+                  confirmDelete(s);
+                },
+              ),
+            ],
+          ],
+        ),
       ),
-      isThreeLine: s.sub.isNotEmpty,
+    );
+  }
+
+  Widget icon(SiteLink s) {
+    final host = Uri.tryParse(s.url)?.host ?? '';
+    final letter = s.title.isEmpty ? '?' : s.title.characters.first;
+    final fallback = Text(letter,
+        style: TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.primary));
+    if (host.isEmpty) return fallback;
+    return Image.network(
+      'https://www.google.com/s2/favicons?domain=$host&sz=128',
+      width: 40,
+      height: 40,
+      errorBuilder: (c, e, st) => fallback,
+    );
+  }
+
+  Widget tile(SiteLink s) {
+    return GestureDetector(
       onTap: () => open(s),
-      trailing: PopupMenuButton<String>(
-        onSelected: (v) {
-          if (v == 'copy') copy(s);
-          if (v == 'edit') edit(s);
-          if (v == 'del') confirmDelete(s);
-        },
-        itemBuilder: (c) => const [
-          PopupMenuItem(value: 'copy', child: Text('ঠিকানা কপি')),
-          PopupMenuItem(value: 'edit', child: Text('সম্পাদনা')),
-          PopupMenuItem(value: 'del', child: Text('মুছুন')),
+      onLongPress: () => options(s),
+      child: Column(
+        children: [
+          Container(
+            width: 68,
+            height: 68,
+            alignment: Alignment.center,
+            decoration: cardDeco(context, 20),
+            child: icon(s),
+          ),
+          const SizedBox(height: 6),
+          Text(s.title,
+              maxLines: 2,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -251,11 +353,20 @@ class _HubPageState extends State<HubPage> {
     final children = <Widget>[];
     for (final c in cats) {
       final items = shown.where((s) => s.cat == c).toList();
-      children.add(ExpansionTile(
-        key: PageStorageKey('$c-$t'),
-        initiallyExpanded: true,
-        title: Text(c, style: const TextStyle(fontWeight: FontWeight.bold)),
-        children: items.map((s) => tile(s)).toList(),
+      children.add(Padding(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+        child: Text(c,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+      ));
+      children.add(GridView.count(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        crossAxisCount: 4,
+        mainAxisSpacing: 14,
+        crossAxisSpacing: 8,
+        childAspectRatio: 0.78,
+        children: [for (final s in items) tile(s)],
       ));
     }
 
@@ -268,15 +379,26 @@ class _HubPageState extends State<HubPage> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: TextField(
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search),
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search),
                 hintText: 'লিংক খুঁজুন',
-                border: OutlineInputBorder(),
+                filled: true,
+                fillColor: cardBg(context),
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(28),
+                  borderSide: BorderSide.none,
+                ),
               ),
               onChanged: (v) => setState(() => q = v),
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 2, 20, 0),
+            child: Text('চাপলে খুলবে, চেপে ধরলে কপি, সম্পাদনা বা মোছার অপশন আসবে।',
+                style: TextStyle(fontSize: 12, color: softText(context))),
           ),
           Expanded(
             child: loading
@@ -284,7 +406,7 @@ class _HubPageState extends State<HubPage> {
                 : children.isEmpty
                     ? const Center(child: Text('কোনো লিংক পাওয়া যায়নি।'))
                     : ListView(
-                        padding: const EdgeInsets.only(bottom: 80),
+                        padding: const EdgeInsets.only(bottom: 90),
                         children: children,
                       ),
           ),

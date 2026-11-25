@@ -21,14 +21,14 @@ String posName(String code) {
   for (final p in wordPos) {
     if (p[0] == code) return p[1];
   }
-  return 'অন্যান্য';
+  return 'Other';
 }
 
 String catName(String code) {
   for (final c in wordCats) {
     if (c[0] == code) return c[1];
   }
-  return 'অন্যান্য';
+  return 'Other';
 }
 
 List<Word> applyFilter(List<Word> src, WordFilter f) {
@@ -105,13 +105,13 @@ Future<bool> showFilterSheet(BuildContext context, WordFilter f) async {
                   ),
                 ],
               ),
-              head('শব্দের শ্রেণি (Part of speech)'),
+              head('Part of speech'),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
                   ChoiceChip(
-                    label: const Text('সব'),
+                    label: const Text('All'),
                     selected: f.pos == 'all',
                     onSelected: (_) {
                       f.pos = 'all';
@@ -131,13 +131,13 @@ Future<bool> showFilterSheet(BuildContext context, WordFilter f) async {
                     ),
                 ],
               ),
-              head('বিষয় (ক্যাটাগরি)'),
+              head('Category'),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
                   ChoiceChip(
-                    label: const Text('সব বিষয়'),
+                    label: const Text('All categories'),
                     selected: f.cat == 'all',
                     onSelected: (_) {
                       f.cat = 'all';
@@ -209,7 +209,7 @@ class FilterBar extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             children: [
-              chip('all', 'সব'),
+              chip('all', 'All'),
               for (final p in wordPos) chip(p[0], p[1]),
             ],
           ),
@@ -218,19 +218,21 @@ class FilterBar extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
           child: Row(
             children: [
-              Flexible(
-                child: FilledButton.tonalIcon(
-                  icon: const Icon(Icons.tune, size: 18),
-                  label: Text(
-                    filter.cat == 'all' ? 'বিষয়' : catName(filter.cat),
+              FilledButton.tonalIcon(
+                icon: const Icon(Icons.tune, size: 18),
+                label: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 120),
+                  child: Text(
+                    filter.cat == 'all' ? 'Category' : catName(filter.cat),
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  onPressed: () async {
-                    if (await showFilterSheet(context, filter)) onChanged();
-                  },
                 ),
+                onPressed: () async {
+                  if (await showFilterSheet(context, filter)) onChanged();
+                },
               ),
-              const SizedBox(width: 10),
+              const Spacer(),
               Text('$total শব্দ',
                   style: TextStyle(color: softText(context), fontSize: 13)),
               const Spacer(),

@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
 import 'about.dart';
+import 'style.dart';
 import 'vocab.dart';
 
 class AppSettings {
-  static final ValueNotifier<ThemeMode> mode = ValueNotifier(ThemeMode.light);
+  static final ValueNotifier<int> preset = ValueNotifier(0);
+  static final ValueNotifier<int> accent = ValueNotifier(0);
+  static final ValueNotifier<double> warm = ValueNotifier(0.0);
+  static final ValueNotifier<double> dim = ValueNotifier(0.0);
   static final ValueNotifier<double> textScale = ValueNotifier(1.0);
-  static final ValueNotifier<int> seed = ValueNotifier(0xFFC05A2B);
   static final ValueNotifier<double> speech = ValueNotifier(0.4);
   static final ValueNotifier<bool> animate = ValueNotifier(true);
   static final ValueNotifier<int> animSecs = ValueNotifier(14);
 
-  static const List<int> colors = [
-    0xFFC05A2B,
-    0xFF1B2F4A,
-    0xFF00897B,
-    0xFF6C5CE7,
-    0xFFE84393,
-    0xFF2E7D32,
+  // 0 মানে থিমের নিজস্ব রঙ
+  static const List<int> accents = [
+    0xFFB4532A,
+    0xFF2A7F6B,
+    0xFF2F6DB5,
+    0xFF6A55C8,
+    0xFFD0457F,
+    0xFF8A6D1F,
   ];
   static const List<int> speeds = [24, 14, 7];
 
@@ -34,12 +38,12 @@ class AppSettings {
     for (final r in rows) {
       m[r['k'] as String] = r['v'] as String;
     }
-    final t = m['mode'];
-    mode.value = t == 'dark'
-        ? ThemeMode.dark
-        : (t == 'system' ? ThemeMode.system : ThemeMode.light);
+    final p = int.tryParse(m['preset'] ?? '') ?? 0;
+    preset.value = (p >= 0 && p < kPresets.length) ? p : 0;
+    accent.value = int.tryParse(m['accent'] ?? '') ?? 0;
+    warm.value = double.tryParse(m['warm'] ?? '') ?? 0.0;
+    dim.value = double.tryParse(m['dim'] ?? '') ?? 0.0;
     textScale.value = double.tryParse(m['scale'] ?? '') ?? 1.0;
-    seed.value = int.tryParse(m['seed2'] ?? '') ?? 0xFFC05A2B;
     speech.value = double.tryParse(m['speech'] ?? '') ?? 0.4;
     animate.value = (m['anim'] ?? '1') == '1';
     final s = int.tryParse(m['animsecs'] ?? '') ?? 14;
@@ -53,22 +57,29 @@ class AppSettings {
         'INSERT OR REPLACE INTO settings(k, v) VALUES(?,?)', [k, v]);
   }
 
-  static String _modeName(ThemeMode m) =>
-      m == ThemeMode.dark ? 'dark' : (m == ThemeMode.system ? 'system' : 'light');
+  static Future<void> setPreset(int i) async {
+    preset.value = i;
+    await save('preset', '$i');
+  }
 
-  static Future<void> setMode(ThemeMode m) async {
-    mode.value = m;
-    await save('mode', _modeName(m));
+  static Future<void> setAccent(int c) async {
+    accent.value = c;
+    await save('accent', '$c');
+  }
+
+  static Future<void> setWarm(double v) async {
+    warm.value = v;
+    await save('warm', '$v');
+  }
+
+  static Future<void> setDim(double v) async {
+    dim.value = v;
+    await save('dim', '$v');
   }
 
   static Future<void> setScale(double s) async {
     textScale.value = s;
     await save('scale', '$s');
-  }
-
-  static Future<void> setSeed(int c) async {
-    seed.value = c;
-    await save('seed2', '$c');
   }
 
   static Future<void> setSpeech(double v) async {
@@ -90,32 +101,165 @@ class AppSettings {
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
-  Widget _title(String t) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
-        child: Text(t,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+  Widget _title(String t, [String? sub]) => Padding(
+        padding: const EdgeInsets.fromLTRB(4, 22, 4, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            if (sub != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(sub, style: const TextStyle(fontSize: 13)),
+              ),
+          ],
+        ),
       );
+
+  Widget _presetCard(BuildContext context, int i, bool sel, double w) {
+    final p = kPresets[i];
+    return GestureDetector(
+      onTap: () => AppSettings.setPreset(i),
+      child: Container(
+        width: w,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: p.bg,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+              color: sel ? p.primary : Colors.black12, width: sel ? 3 : 1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 34,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: p.card,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(radius: 8, backgroundColor: p.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Container(
+                        height: 6,
+                        decoration: BoxDecoration(
+                            color: p.soft.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(3))),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(p.name,
+                      maxLines: 2,
+                      style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: p.text)),
+                ),
+                if (sel) Icon(Icons.check_circle, color: p.primary, size: 18),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final cardW = (MediaQuery.of(context).size.width - 32 - 10) / 2;
     return Scaffold(
       appBar: AppBar(title: const Text('সেটিংস')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _title('থিম'),
-            ValueListenableBuilder<ThemeMode>(
-              valueListenable: AppSettings.mode,
-              builder: (c, m, _) => SegmentedButton<ThemeMode>(
-                segments: const [
-                  ButtonSegment(value: ThemeMode.light, label: Text('Light')),
-                  ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
-                  ButtonSegment(
-                      value: ThemeMode.system, label: Text('ফোনের মতো')),
+            _title('থিম', 'পছন্দের রঙের থিম বেছে নিন'),
+            ValueListenableBuilder<int>(
+              valueListenable: AppSettings.preset,
+              builder: (c, cur, _) => Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  for (var i = 0; i < kPresets.length; i++)
+                    _presetCard(context, i, cur == i, cardW),
                 ],
-                selected: {m},
-                onSelectionChanged: (s) => AppSettings.setMode(s.first),
+              ),
+            ),
+            _title('আলাদা রঙ (অ্যাকসেন্ট)', 'থিমের মূল রঙ বদলাতে চাইলে'),
+            ValueListenableBuilder<int>(
+              valueListenable: AppSettings.accent,
+              builder: (c, cur, _) => Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  GestureDetector(
+                    onTap: () => AppSettings.setAccent(0),
+                    child: CircleAvatar(
+                      radius: 22,
+                      backgroundColor: Colors.black12,
+                      child: cur == 0
+                          ? const Icon(Icons.check, color: Colors.black87)
+                          : const Text('Auto',
+                              style: TextStyle(
+                                  fontSize: 11, color: Colors.black87)),
+                    ),
+                  ),
+                  for (final col in AppSettings.accents)
+                    GestureDetector(
+                      onTap: () => AppSettings.setAccent(col),
+                      child: CircleAvatar(
+                        radius: 22,
+                        backgroundColor: Color(col),
+                        child: cur == col
+                            ? const Icon(Icons.check, color: Colors.white)
+                            : null,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            _title('চোখের আরাম', 'রাতে বা কম আলোতে পড়ার জন্য'),
+            ValueListenableBuilder<double>(
+              valueListenable: AppSettings.warm,
+              builder: (c, v, _) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('উষ্ণ ফিল্টার (নীল আলো কমায়): ${(v * 100).round()}%'),
+                  Slider(
+                    value: v,
+                    min: 0,
+                    max: 1,
+                    onChanged: (x) => AppSettings.warm.value = x,
+                    onChangeEnd: (x) => AppSettings.setWarm(x),
+                  ),
+                ],
+              ),
+            ),
+            ValueListenableBuilder<double>(
+              valueListenable: AppSettings.dim,
+              builder: (c, v, _) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('স্ক্রিন কম উজ্জ্বল: ${(v * 200).round()}%'),
+                  Slider(
+                    value: v,
+                    min: 0,
+                    max: 0.5,
+                    onChanged: (x) => AppSettings.dim.value = x,
+                    onChangeEnd: (x) => AppSettings.setDim(x),
+                  ),
+                ],
               ),
             ),
             _title('রঙের এনিমেশন'),
@@ -151,27 +295,6 @@ class SettingsPage extends StatelessWidget {
                 ],
                 selected: {s},
                 onSelectionChanged: (v) => AppSettings.setScale(v.first),
-              ),
-            ),
-            _title('অ্যাপের রঙ'),
-            ValueListenableBuilder<int>(
-              valueListenable: AppSettings.seed,
-              builder: (c, cur, _) => Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  for (final col in AppSettings.colors)
-                    GestureDetector(
-                      onTap: () => AppSettings.setSeed(col),
-                      child: CircleAvatar(
-                        radius: 22,
-                        backgroundColor: Color(col),
-                        child: cur == col
-                            ? const Icon(Icons.check, color: Colors.white)
-                            : null,
-                      ),
-                    ),
-                ],
               ),
             ),
             _title('কোরিয়ান উচ্চারণের গতি'),

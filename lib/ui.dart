@@ -49,23 +49,16 @@ class _AnimatedBgState extends State<AnimatedBg>
     return AnimatedBuilder(
       animation: c,
       builder: (ctx, _) {
-        final cs = Theme.of(ctx).colorScheme;
-        final base = HSVColor.fromColor(cs.primary);
+        final bg = Theme.of(ctx).scaffoldBackgroundColor;
+        final pr = Theme.of(ctx).colorScheme.primary;
         final t = AppSettings.animate.value ? c.value : 0.0;
-        Color tint(double shift, double amt) => Color.lerp(
-            cs.surface,
-            base.withHue((base.hue + shift + 360) % 360).toColor(),
-            amt)!;
+        Color tint(double a) => Color.lerp(bg, pr, a)!;
         return Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment(-1 + t, -1),
               end: Alignment(1 - t, 1),
-              colors: [
-                tint(40 * t, 0.10),
-                tint(20 - 30 * t, 0.24),
-                tint(70 * t, 0.12),
-              ],
+              colors: [tint(0.02 + 0.05 * t), bg, tint(0.07 - 0.05 * t)],
             ),
           ),
           child: widget.child,

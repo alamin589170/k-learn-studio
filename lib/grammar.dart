@@ -277,11 +277,7 @@ class _G120TabState extends State<_G120Tab> {
                     return Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                       child: Container(
-                        decoration: BoxDecoration(
-                          color: cardBg(context),
-                          borderRadius: BorderRadius.circular(22),
-                          boxShadow: softShadow(context),
-                        ),
+                        decoration: cardDeco(context, 22),
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
@@ -381,11 +377,7 @@ class _GrammarDetailState extends State<GrammarDetail> {
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [kNavy, cs.primary],
-            ),
+            gradient: headGradient(context),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -462,11 +454,7 @@ class _GrammarDetailState extends State<GrammarDetail> {
             Container(
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.fromLTRB(16, 10, 6, 10),
-              decoration: BoxDecoration(
-                color: cardBg(context),
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: softShadow(context),
-              ),
+              decoration: cardDeco(context, 18),
               child: Row(
                 children: [
                   Expanded(
@@ -832,11 +820,7 @@ class _PdfTabState extends State<_PdfTab> {
                     final r = items[i];
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: cardBg(context),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: softShadow(context),
-                      ),
+                      decoration: cardDeco(context, 20),
                       child: ListTile(
                         leading: const Icon(Icons.picture_as_pdf,
                             color: Colors.red, size: 34),

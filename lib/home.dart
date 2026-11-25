@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'connected.dart';
 import 'flashcards.dart';
 import 'hub.dart';
 import 'library.dart';
@@ -46,7 +47,7 @@ class _HomePageState extends State<HomePage> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.14),
+          color: Colors.white.withOpacity(0.16),
           borderRadius: BorderRadius.circular(18),
         ),
         child: Column(
@@ -66,17 +67,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget header() {
-    final cs = Theme.of(context).colorScheme;
     final top = MediaQuery.of(context).padding.top;
     return Container(
       padding: EdgeInsets.fromLTRB(20, top + 8, 20, 24),
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(36)),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [kNavy, Color.lerp(kNavy, cs.primary, 0.55)!],
-        ),
+        gradient: headGradient(context),
         boxShadow: softShadow(context),
       ),
       child: Column(
@@ -89,7 +85,7 @@ class _HomePageState extends State<HomePage> {
                 onPressed: widget.onMenu,
               ),
               const Spacer(),
-              const Icon(Icons.translate, color: kGold),
+              const Icon(Icons.translate, color: Colors.white70),
             ],
           ),
           const SizedBox(height: 8),
@@ -119,11 +115,7 @@ class _HomePageState extends State<HomePage> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Container(
-        decoration: BoxDecoration(
-          color: cardBg(context),
-          borderRadius: BorderRadius.circular(26),
-          boxShadow: softShadow(context),
-        ),
+        decoration: cardDeco(context, 26),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -161,6 +153,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return RefreshIndicator(
       onRefresh: loadStats,
       child: ListView(
@@ -168,17 +161,19 @@ class _HomePageState extends State<HomePage> {
         children: [
           header(),
           const SizedBox(height: 18),
-          tile(Icons.translate, kOrange, 'শব্দভাণ্ডার',
+          tile(Icons.translate, cs.primary, 'শব্দভাণ্ডার',
               'ছবি, উচ্চারণ ও অর্থসহ শব্দ', () => widget.goTab(0)),
-          tile(Icons.style, const Color(0xFF00897B), '3D ফ্ল্যাশকার্ড',
+          tile(Icons.style, const Color(0xFF2A7F6B), '3D ফ্ল্যাশকার্ড',
               'সোয়াইপ করে শিখুন', () => push(const FlashcardPage())),
-          tile(Icons.menu_book, kNavy, 'গ্রামার',
+          tile(Icons.menu_book, const Color(0xFF2F6DB5), 'গ্রামার',
               'ব্যাকরণ, পাঠ ও PDF', () => widget.goTab(1)),
-          tile(Icons.quiz, const Color(0xFF6C5CE7), 'কুইজ ও টেস্ট',
+          tile(Icons.quiz, const Color(0xFF6A55C8), 'কুইজ ও টেস্ট',
               'নিজেকে যাচাই করুন', () => push(const QuizPage())),
-          tile(Icons.bookmark, kGold, 'সংরক্ষিত শব্দ',
+          tile(Icons.bookmark, const Color(0xFFB8860B), 'সংরক্ষিত শব্দ',
               'আপনার বুকমার্ক করা শব্দ', () => widget.goTab(4)),
-          tile(Icons.language, const Color(0xFF0984E3), 'ওয়েবসাইট হাব',
+          tile(Icons.apps, const Color(0xFFD0457F), 'কানেক্টেড অ্যাপস',
+              'শেখার সহায়ক অ্যাপ', () => push(const ConnectedPage())),
+          tile(Icons.language, const Color(0xFF3F8F4F), 'ওয়েবসাইট হাব',
               'দরকারি লিংক', () => push(const HubPage())),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 14, 12, 12),
@@ -196,7 +191,10 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          const BookShelf(limit: 4),
+          const BookShelf(
+            limit: 4,
+            emptyText: 'বই আসছে... ইন্টারনেট চালু রাখুন, লাইব্রেরি ট্যাবে বই দেখা যাবে।',
+          ),
         ],
       ),
     );
