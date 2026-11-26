@@ -1,7 +1,26 @@
 {
-  "rev": 1,
-  "books": [],
-  "apps": [],
+  "rev": 2,
+  "books": [
+    {
+      "title": "NEW EPS Topik BOOK 1",
+      "drive": "https://drive.google.com/file/d/1fnDKl6vMfhDPLJTkrUzn6ErWUlF8eVRP/view?usp=drivesdk",
+      "chapters": 0
+    },
+    {
+      "title": "NEW EPS Topik BOOK 2",
+      "drive": "https://drive.google.com/file/d/1XAMoVwu1LX7ass8-q8yeQtZpaKRk5A4g/view?usp=drivesdk",
+      "chapters": 0
+    }
+  ],
+  "apps": [
+    {
+      "name": "Korean EPS-Topik Book",
+      "sub": "Self-Study Textbook",
+      "package": "com.topik.kiranchhetri.myapplication",
+      "url": "",
+      "icon": "https://play-lh.googleusercontent.com/fcUu89XiW-c0WTy-AfmIGCNxohAYzPe9MJl1PcPOZUIMAQkHVEfPfCDnylUJZon60cqtFMlnd-yOzYrbmVdN41w=w240-h480"
+    }
+  ],
   "links": [],
   "words": [],
   "corrections": []
