@@ -48,7 +48,6 @@ class _KLearnAppState extends State<KLearnApp> {
             children: [
               const Positioned.fill(child: AnimatedBg()),
               Positioned.fill(child: child!),
-              const Positioned.fill(child: DayNightFab()),
               Positioned.fill(
                 child: ListenableBuilder(
                   listenable:

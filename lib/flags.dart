@@ -1,90 +1,77 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'style.dart';
 
-enum FlagKind { korea, bangladesh }
+// কোরিয়া | বাংলাদেশ: দুই পতাকা একসঙ্গে (স্থির ছবি, এনিমেশন নেই)
+class FlagSplitPainter extends CustomPainter {
+  const FlagSplitPainter();
 
-class FlagPainter extends CustomPainter {
-  final FlagKind kind;
-  final double t;
-  final double offset;
-  FlagPainter(this.kind, this.t, this.offset);
+  static double _edge(double y, double w) =>
+      w * 0.60 + 9 * math.sin(y * 0.055) + 6 * math.sin(y * 0.17 + 1.3);
 
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width, h = size.height;
-    final amp = h * 0.035;
-    final phase = (t + offset) * 2 * math.pi;
-    const n = 28;
-    double wave(double x) => math.sin(x / w * 2 * math.pi * 1.1 - phase);
-
-    final path = Path()..moveTo(0, amp + amp * wave(0));
-    for (var i = 1; i <= n; i++) {
-      final x = w * i / n;
-      path.lineTo(x, amp + amp * wave(x));
-    }
-    for (var i = n; i >= 0; i--) {
-      final x = w * i / n;
-      path.lineTo(x, h - amp + amp * wave(x));
-    }
-    path.close();
-
-    canvas.save();
-    canvas.clipPath(path);
-    if (kind == FlagKind.korea) {
-      _korea(canvas, w, h);
-    } else {
-      _bangladesh(canvas, w, h);
-    }
-    // কাপড়ের ভাঁজের আলো-ছায়া
-    const seg = n;
-    for (var i = 0; i < seg; i++) {
-      final x0 = w * i / seg;
-      final cx = x0 + w / seg / 2;
-      final d = math.cos(cx / w * 2 * math.pi * 1.1 - phase);
-      final col = d > 0 ? Colors.white : Colors.black;
-      canvas.drawRect(
-        Rect.fromLTWH(x0, 0, w / seg + 0.6, h),
-        Paint()..color = col.withOpacity(0.13 * d.abs()),
-      );
-    }
-    canvas.restore();
-    canvas.drawPath(
-      path,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1
-        ..color = Colors.white.withOpacity(0.5),
-    );
-  }
-
-  void _korea(Canvas canvas, double w, double h) {
-    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..color = Colors.white);
-    final c = Offset(w / 2, h / 2);
-    final r = h * 0.25;
     const red = Color(0xFFCD2E3A);
     const blue = Color(0xFF0047A0);
 
-    // তাইগুক
+    // কোরিয়া (সাদা জমি)
+    canvas.drawRect(Rect.fromLTWH(0, 0, w, h),
+        Paint()..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFFFFF), Color(0xFFE9EDF2)],
+        ).createShader(Rect.fromLTWH(0, 0, w, h)));
+
+    // বাংলাদেশ (সবুজ জমি, ভাঙা ধারসহ)
+    final g = Path()..moveTo(_edge(0, w), 0);
+    for (double y = 0; y <= h; y += 6) {
+      g.lineTo(_edge(y, w), y);
+    }
+    g.lineTo(w, h);
+    g.lineTo(w, 0);
+    g.close();
+    canvas.drawPath(
+        g,
+        Paint()
+          ..shader = const LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [Color(0xFF00855F), Color(0xFF00573F)],
+          ).createShader(Rect.fromLTWH(0, 0, w, h)));
+    // ধারের ছায়া
+    final edge = Path()..moveTo(_edge(0, w), 0);
+    for (double y = 0; y <= h; y += 6) {
+      edge.lineTo(_edge(y, w), y);
+    }
+    canvas.drawPath(
+        edge,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2
+          ..color = Colors.black.withOpacity(0.22));
+
+    // কোরিয়ার তাইগুক
+    final cx = w * 0.29, cy = 118.0;
+    final r = w * 0.135;
     canvas.save();
-    canvas.translate(c.dx, c.dy);
-    canvas.rotate(-0.9828);
-    final circle = Path()..addOval(Rect.fromCircle(center: Offset.zero, radius: r));
-    canvas.clipPath(circle);
+    canvas.translate(cx, cy);
+    canvas.rotate(-0.588);
+    canvas.save();
+    canvas.clipPath(Path()..addOval(Rect.fromCircle(center: Offset.zero, radius: r)));
     canvas.drawRect(Rect.fromLTRB(-r, -r, r, 0), Paint()..color = red);
     canvas.drawRect(Rect.fromLTRB(-r, 0, r, r), Paint()..color = blue);
-    canvas.drawCircle(Offset(-r / 2, 0), r / 2, Paint()..color = red);
-    canvas.drawCircle(Offset(r / 2, 0), r / 2, Paint()..color = blue);
+    canvas.drawCircle(Offset(-r / 2, 0), r / 2, Paint()..color = blue);
+    canvas.drawCircle(Offset(r / 2, 0), r / 2, Paint()..color = red);
+    canvas.restore();
     canvas.restore();
 
     // চার কোণের ট্রাইগ্রাম
-    final len = h * 0.34, th = h * 0.05, gap = h * 0.028;
-    final d = h * 0.62;
-    final black = Paint()..color = Colors.black;
-    void tri(Offset dir, List<bool> solid) {
-      final u = dir / dir.distance;
+    final black = Paint()..color = const Color(0xFF111111);
+    final len = r * 1.35, th = r * 0.2, gap = r * 0.12, d = r * 2.05;
+    void tri(double sx, double sy, List<bool> solid) {
+      final u = Offset(sx, sy) / math.sqrt2;
       canvas.save();
-      canvas.translate(c.dx + u.dx * d, c.dy + u.dy * d);
+      canvas.translate(cx + u.dx * d, cy + u.dy * d);
       canvas.rotate(math.atan2(u.dy, u.dx));
       for (var i = 0; i < 3; i++) {
         final x = (i - 1) * (th + gap);
@@ -92,150 +79,89 @@ class FlagPainter extends CustomPainter {
           canvas.drawRect(
               Rect.fromLTRB(x - th / 2, -len / 2, x + th / 2, len / 2), black);
         } else {
-          final g = len * 0.12;
+          final k = len * 0.1;
           canvas.drawRect(
-              Rect.fromLTRB(x - th / 2, -len / 2, x + th / 2, -g), black);
+              Rect.fromLTRB(x - th / 2, -len / 2, x + th / 2, -k), black);
           canvas.drawRect(
-              Rect.fromLTRB(x - th / 2, g, x + th / 2, len / 2), black);
+              Rect.fromLTRB(x - th / 2, k, x + th / 2, len / 2), black);
         }
       }
       canvas.restore();
     }
 
-    tri(Offset(-w, -h), [true, true, true]);
-    tri(Offset(w, -h), [false, true, false]);
-    tri(Offset(-w, h), [true, false, true]);
-    tri(Offset(w, h), [false, false, false]);
-  }
+    tri(-1, -1, [true, true, true]);
+    tri(1, -1, [false, true, false]);
+    tri(-1, 1, [true, false, true]);
+    tri(1, 1, [false, false, false]);
 
-  void _bangladesh(Canvas canvas, double w, double h) {
-    canvas.drawRect(
-        Rect.fromLTWH(0, 0, w, h), Paint()..color = const Color(0xFF006A4E));
-    canvas.drawCircle(Offset(w * 0.45, h / 2), h * 0.33,
+    // বাংলাদেশের লাল বৃত্ত
+    canvas.drawCircle(Offset(w * 0.80, cy), w * 0.15,
         Paint()..color = const Color(0xFFF42A41));
+
+    // কাচের হালকা আলো
+    canvas.drawRect(
+        Rect.fromLTWH(0, 0, w, h * 0.5),
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.white.withOpacity(0.28), Colors.white.withOpacity(0)],
+          ).createShader(Rect.fromLTWH(0, 0, w, h * 0.5)));
   }
 
   @override
-  bool shouldRepaint(FlagPainter old) => old.t != t || old.kind != kind;
+  bool shouldRepaint(FlagSplitPainter old) => false;
 }
 
-// কোরিয়া + বাংলাদেশ: দুই পতাকা ও বন্ধুত্বের হৃদয়
-class FlagsBanner extends StatefulWidget {
-  const FlagsBanner({super.key});
-  @override
-  State<FlagsBanner> createState() => _FlagsBannerState();
-}
-
-class _FlagsBannerState extends State<FlagsBanner>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController c =
-      AnimationController(vsync: this, duration: const Duration(seconds: 5))
-        ..repeat();
-
-  @override
-  void dispose() {
-    c.dispose();
-    super.dispose();
-  }
-
-  Widget flag(FlagKind k, double w, double tilt, double off) {
-    final h = k == FlagKind.korea ? w * 2 / 3 : w * 0.6;
-    return Transform.rotate(
-      angle: tilt,
-      child: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withOpacity(0.35),
-                blurRadius: 14,
-                offset: const Offset(0, 8)),
-          ],
-        ),
-        child: CustomPaint(size: Size(w, h), painter: FlagPainter(k, c.value, off)),
-      ),
-    );
-  }
+// হোমের ক্রিস্টাল প্লেট: উপরে দুই পতাকা, নিচে K-Learn Studio লেখা
+class FlagHeader extends StatelessWidget {
+  final Widget menu;
+  final Widget body;
+  const FlagHeader({super.key, required this.menu, required this.body});
 
   @override
   Widget build(BuildContext context) {
-    final pr = Theme.of(context).colorScheme.primary;
-    final h2 = head2(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-      child: Glass(
-        radius: 30,
-        blur: 18,
-        padding: const EdgeInsets.fromLTRB(14, 16, 14, 14),
-        child: LayoutBuilder(
-          builder: (ctx, box) {
-            final fw = ((box.maxWidth - 84) / 2).clamp(80.0, 130.0).toDouble();
-            return AnimatedBuilder(
-              animation: c,
-              builder: (ctx, _) {
-                final beat = 1 + 0.12 * math.sin(c.value * 2 * math.pi * 2);
-                return Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        flag(FlagKind.korea, fw, -0.07, 0),
-                        Transform.scale(
-                          scale: beat,
-                          child: Container(
-                            width: 54,
-                            height: 54,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [pr, h2],
-                              ),
-                              border: Border.all(
-                                  color: Colors.white.withOpacity(0.6)),
-                              boxShadow: [
-                                BoxShadow(
-                                    color: pr.withOpacity(0.55),
-                                    blurRadius: 18,
-                                    spreadRadius: 1),
-                              ],
-                            ),
-                            child: const Icon(Icons.favorite,
-                                color: Colors.white, size: 28),
-                          ),
-                        ),
-                        flag(FlagKind.bangladesh, fw, 0.07, 0.35),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(34),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(34),
+          border: Border.all(color: Colors.white.withOpacity(0.7), width: 1.2),
+        ),
+        child: Stack(
+          children: [
+            const Positioned.fill(
+              child: RepaintBoundary(
+                child: CustomPaint(painter: FlagSplitPainter()),
+              ),
+            ),
+            Column(
+              children: [
+                SizedBox(
+                  height: 236,
+                  child: Align(alignment: Alignment.topLeft, child: menu),
+                ),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(26),
+                    border: Border.all(color: Colors.white.withOpacity(0.35)),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.black.withOpacity(0.62),
+                        Colors.black.withOpacity(0.48),
                       ],
                     ),
-                    const SizedBox(height: 14),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('한국',
-                            style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: pr)),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text('×', style: TextStyle(fontSize: 18)),
-                        ),
-                        Text('বাংলাদেশ',
-                            style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: h2)),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text('দুই দেশের বন্ধুত্ব, ভাষার সেতুবন্ধন',
-                        style: TextStyle(fontSize: 13, color: softText(context))),
-                  ],
-                );
-              },
-            );
-          },
+                  ),
+                  child: body,
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

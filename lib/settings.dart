@@ -281,28 +281,6 @@ class SettingsPage extends StatelessWidget {
                 ],
               ),
             ),
-            _title('রঙের এনিমেশন'),
-            ValueListenableBuilder<bool>(
-              valueListenable: AppSettings.animate,
-              builder: (c, on, _) => SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('ব্যাকগ্রাউন্ডের রং ধীরে বদলাবে'),
-                value: on,
-                onChanged: (v) => AppSettings.setAnimate(v),
-              ),
-            ),
-            ValueListenableBuilder<int>(
-              valueListenable: AppSettings.animSecs,
-              builder: (c, s, _) => SegmentedButton<int>(
-                segments: const [
-                  ButtonSegment(value: 24, label: Text('ধীর')),
-                  ButtonSegment(value: 14, label: Text('মাঝারি')),
-                  ButtonSegment(value: 7, label: Text('দ্রুত')),
-                ],
-                selected: {AppSettings.speeds.contains(s) ? s : 14},
-                onSelectionChanged: (v) => AppSettings.setAnimSecs(v.first),
-              ),
-            ),
             _title('লেখার আকার'),
             ValueListenableBuilder<double>(
               valueListenable: AppSettings.textScale,

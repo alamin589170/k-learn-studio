@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'images.dart';
@@ -42,12 +44,53 @@ class _FlipCardState extends State<FlipCard>
     return t;
   }
 
-  // প্রথম অগ্রাধিকার: শব্দভাণ্ডারের ছোট ছবি (thumbs/ID.jpg)
+  String _q() {
+    var q = widget.word.en.split(RegExp(r'[,/;(]')).first.trim().toLowerCase();
+    if (q.startsWith('to ')) q = q.substring(3);
+    return q;
+  }
+
+  // বড় (৬৪০px) 2D/ভেক্টর ছবি; শুধু শব্দের অর্থের সঙ্গে ট্যাগ মিললে নেয়
+  Future<File?> _fetchHq(Directory dir, int id) async {
+    const key = String.fromEnvironment('PIXABAY_KEY');
+    final q = _q();
+    if (key.isEmpty || q.isEmpty) return null;
+    final last = q.split(' ').last;
+    for (final type in const ['vector', 'illustration']) {
+      try {
+        final r = await http
+            .get(Uri.parse(
+                'https://pixabay.com/api/?key=$key&q=${Uri.encodeQueryComponent(q)}&image_type=$type&per_page=20&safe_search=true&order=popular&min_width=500'))
+            .timeout(const Duration(seconds: 12));
+        if (r.statusCode != 200) continue;
+        final hits = (jsonDecode(r.body) as Map)['hits'] as List;
+        Map? pick;
+        for (final h in hits) {
+          final tags = ('${(h as Map)['tags']}').toLowerCase();
+          final list = tags.split(',').map((e) => e.trim()).toList();
+          if (list.contains(q) || list.contains(last)) {
+            pick = h;
+            break;
+          }
+        }
+        if (pick == null) continue;
+        final img = await http
+            .get(Uri.parse('${pick['webformatURL']}'))
+            .timeout(const Duration(seconds: 15));
+        if (img.statusCode != 200) continue;
+        final f = File('${dir.path}/${id}_hq.jpg');
+        await f.writeAsBytes(img.bodyBytes);
+        return f;
+      } catch (_) {}
+    }
+    return null;
+  }
+
   Future<void> loadImage() async {
     final id = widget.word.id!;
     try {
       final dir = await _thumbDir();
-      final f = File('${dir.path}/$id.jpg');
+      final f = File('${dir.path}/${id}_hq.jpg');
       if (await f.exists()) {
         if (!mounted) return;
         setState(() {
@@ -56,30 +99,25 @@ class _FlipCardState extends State<FlipCard>
         });
         return;
       }
-      const key = String.fromEnvironment('PIXABAY_KEY');
-      final none = await File('${dir.path}/$id.none').exists();
-      if (key.isNotEmpty && !none) {
-        // WordThumb ছবিটি এনে রাখছে, একটু অপেক্ষা করে দেখি
-        if (mounted) setState(() => useThumb = true);
-        for (var i = 0; i < 8 && mounted; i++) {
-          await Future<void>.delayed(const Duration(seconds: 2));
-          if (await f.exists()) {
-            if (!mounted) return;
-            setState(() {
-              path = f.path;
-              busy = false;
-              useThumb = false;
-            });
-            return;
-          }
-          if (await File('${dir.path}/$id.none').exists()) break;
+      final none = File('${dir.path}/${id}_hq.none');
+      if (!await none.exists()) {
+        final got = await _fetchHq(dir, id);
+        if (got != null) {
+          if (!mounted) return;
+          setState(() {
+            path = got.path;
+            busy = false;
+          });
+          return;
         }
-        if (mounted) setState(() => useThumb = false);
+        await none.writeAsString('1');
       }
     } catch (_) {}
-    // না পেলে আগের নিয়ম
-    var p = await Images.get(id);
-    p ??= await Images.auto(id, Images.query(widget.word.en));
+    // না পেলে: নিজের তোলা/বাছা ছবি, নইলে ছবি ছাড়া সুন্দর কার্ড
+    String? p;
+    try {
+      p = await Images.get(id);
+    } catch (_) {}
     if (!mounted) return;
     setState(() {
       path = p;
@@ -93,12 +131,18 @@ class _FlipCardState extends State<FlipCard>
       final dir = await _thumbDir();
       final f = File('${dir.path}/$id.jpg');
       final none = File('${dir.path}/$id.none');
+      final hq = File('${dir.path}/${id}_hq.jpg');
+      final hqNone = File('${dir.path}/${id}_hq.none');
       if (p == null) {
         if (await f.exists()) await f.delete();
+        if (await hq.exists()) await hq.delete();
         await none.writeAsString('1');
+        await hqNone.writeAsString('1');
       } else {
         await File(p).copy(f.path);
+        await File(p).copy(hq.path);
         if (await none.exists()) await none.delete();
+        if (await hqNone.exists()) await hqNone.delete();
       }
       imageCache.clear();
     } catch (_) {}
@@ -173,7 +217,7 @@ class _FlipCardState extends State<FlipCard>
       await _syncThumb(id, null);
     } else if (p != null) {
       await _syncThumb(id, p);
-      p = '${(await _thumbDir()).path}/$id.jpg';
+      p = '${(await _thumbDir()).path}/${id}_hq.jpg';
     }
     if (!mounted) return;
     setState(() {
@@ -261,26 +305,6 @@ class _FlipCardState extends State<FlipCard>
 
   Widget frontFace() {
     final w = widget.word;
-    final title = Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            w.ko,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-                color: Colors.white, fontSize: 44, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'উল্টাতে চাপুন',
-            style: TextStyle(color: Colors.white70, fontSize: 14),
-          ),
-        ],
-      ),
-    );
     final photoButton = Positioned(
       top: 8,
       right: 8,
@@ -289,6 +313,7 @@ class _FlipCardState extends State<FlipCard>
         onPressed: changeImage,
       ),
     );
+    final hasImg = path != null;
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -296,11 +321,62 @@ class _FlipCardState extends State<FlipCard>
       decoration: deco(head1(context), head2(context)),
       child: Stack(
         children: [
-          Column(
-            children: [
-              Expanded(child: imageArea()),
-              title,
-            ],
+          if (hasImg)
+            Positioned.fill(
+              child: Container(
+                color: Colors.white,
+                child: Image.file(
+                  File(path!),
+                  fit: BoxFit.cover,
+                  filterQuality: FilterQuality.high,
+                  errorBuilder: (ctx, e, s) => const SizedBox(),
+                ),
+              ),
+            )
+          else if (busy)
+            const Center(
+                child: CircularProgressIndicator(color: Colors.white)),
+          if (!hasImg && !busy)
+            Center(
+              child: Text(w.ko.isEmpty ? '?' : w.ko.characters.first,
+                  style: TextStyle(
+                      fontSize: 200,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white.withOpacity(0.14))),
+            ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 30, 16, 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.78),
+                  ],
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    w.ko,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 44,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text('উল্টাতে চাপুন',
+                      style: TextStyle(color: Colors.white70, fontSize: 14)),
+                ],
+              ),
+            ),
           ),
           photoButton,
         ],

@@ -7,92 +7,47 @@ import 'settings.dart';
 import 'style.dart';
 import 'vocab.dart';
 
-class AnimatedBg extends StatefulWidget {
+// স্থির (এনিমেশনহীন) গ্রেডিয়েন্ট ব্যাকগ্রাউন্ড: হালকা ও দ্রুত
+class AnimatedBg extends StatelessWidget {
   const AnimatedBg({super.key});
-  @override
-  State<AnimatedBg> createState() => _AnimatedBgState();
-}
-
-class _AnimatedBgState extends State<AnimatedBg>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController c;
-
-  @override
-  void initState() {
-    super.initState();
-    c = AnimationController(
-        vsync: this, duration: Duration(seconds: AppSettings.animSecs.value));
-    AppSettings.animate.addListener(_sync);
-    AppSettings.animSecs.addListener(_sync);
-    _sync();
-  }
-
-  void _sync() {
-    c.duration = Duration(seconds: AppSettings.animSecs.value);
-    if (AppSettings.animate.value) {
-      c.repeat(reverse: true);
-    } else {
-      c.stop();
-    }
-  }
-
-  @override
-  void dispose() {
-    AppSettings.animate.removeListener(_sync);
-    AppSettings.animSecs.removeListener(_sync);
-    c.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final cur = kPresets[AppSettings.preset.value.clamp(0, kPresets.length - 1)];
     final pr = Theme.of(context).colorScheme.primary;
     final h2 = palOf(context).head2;
-    return RepaintBoundary(
-      child: AnimatedBuilder(
-        animation: c,
-        builder: (ctx, _) {
-          final t = AppSettings.animate.value ? c.value : 0.0;
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment(-0.4 + 0.5 * t, -1),
-                    end: Alignment(0.4 - 0.5 * t, 1),
-                    colors: [cur.bg1, cur.bg2],
-                  ),
-                ),
-              ),
-              Align(
-                alignment: Alignment(-1.0 + 0.9 * t, -0.8 + 0.3 * t),
-                child: _glow(pr, 420, cur.dark ? 0.30 : 0.22),
-              ),
-              Align(
-                alignment: Alignment(1.0 - 0.8 * t, 0.9 - 0.4 * t),
-                child: _glow(h2, 380, cur.dark ? 0.26 : 0.18),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _glow(Color col, double size, double a) => IgnorePointer(
-        child: Container(
+    Widget glow(Color col, double size, double a) => Container(
           width: size,
           height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: RadialGradient(
-              colors: [col.withOpacity(a), col.withOpacity(0)],
+                colors: [col.withOpacity(a), col.withOpacity(0)]),
+          ),
+        );
+    return RepaintBoundary(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [cur.bg1, cur.bg2],
+              ),
             ),
           ),
-        ),
-      );
+          Align(
+              alignment: const Alignment(-1, -0.8),
+              child: glow(pr, 420, cur.dark ? 0.28 : 0.20)),
+          Align(
+              alignment: const Alignment(1, 0.9),
+              child: glow(h2, 380, cur.dark ? 0.24 : 0.16)),
+        ],
+      ),
+    );
+  }
 }
 
 // চালু/বন্ধ সূর্য-চাঁদ বাটন, সব পেজে ভাসমান, টেনে সরানো যায়

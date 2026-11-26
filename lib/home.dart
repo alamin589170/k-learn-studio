@@ -70,52 +70,33 @@ class _HomePageState extends State<HomePage> {
 
   Widget header() {
     final top = MediaQuery.of(context).padding.top;
-    final p = palOf(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(12, top + 8, 12, 0),
-      child: Glass(
-        radius: 34,
-        blur: 20,
-        padding: const EdgeInsets.fromLTRB(14, 8, 16, 20),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            p.head1.withOpacity(0.78),
-            p.head2.withOpacity(0.55),
-          ],
+      child: FlagHeader(
+        menu: Padding(
+          padding: const EdgeInsets.all(8),
+          child: CircleAvatar(
+            backgroundColor: Colors.black38,
+            child: IconButton(
+              icon: const Icon(Icons.menu, color: Colors.white),
+              onPressed: widget.onMenu,
+            ),
+          ),
         ),
-        child: Column(
+        body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Text('K-Learn Studio',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold)),
+            const SizedBox(height: 2),
+            const Text('বাংলা থেকে কোরিয়ান, সহজে শিখুন',
+                style: TextStyle(color: Colors.white70, fontSize: 15)),
+            const SizedBox(height: 14),
             Row(
               children: [
-                IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.white),
-                  onPressed: widget.onMenu,
-                ),
-                const Spacer(),
-                const Icon(Icons.auto_awesome, color: Colors.white70),
-                const SizedBox(width: 6),
-              ],
-            ),
-            const Padding(
-              padding: EdgeInsets.only(left: 6),
-              child: Text('K-Learn Studio',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold)),
-            ),
-            const Padding(
-              padding: EdgeInsets.only(left: 6, top: 4),
-              child: Text('বাংলা থেকে কোরিয়ান, সহজে শিখুন',
-                  style: TextStyle(color: Colors.white70, fontSize: 15)),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                const SizedBox(width: 6),
                 stat('মোট শব্দ', '$total'),
                 const SizedBox(width: 12),
                 stat('সংরক্ষিত শব্দ', '$saved'),
@@ -178,7 +159,6 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.only(bottom: 30),
         children: [
           header(),
-          const FlagsBanner(),
           const SizedBox(height: 12),
           tile(Icons.translate, cs.primary, 'শব্দভাণ্ডার',
               'ছবি, উচ্চারণ ও অর্থসহ শব্দ', () => widget.goTab(0)),

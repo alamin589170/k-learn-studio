@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 // ---------- থিম প্রিসেট (প্রতিটিতে ২টি রঙের গ্রেডিয়েন্ট) ----------
@@ -141,7 +140,7 @@ BoxDecoration cardDeco(BuildContext c, [double radius = 24, Color? color]) {
   );
 }
 
-// আসল ঝাপসা কাচের (blur) বাক্স
+// ক্রিস্টাল কাচের বাক্স (ব্লার ছাড়া, তাই ল্যাগ হয় না)
 class Glass extends StatelessWidget {
   final Widget child;
   final double radius;
@@ -152,7 +151,7 @@ class Glass extends StatelessWidget {
       {super.key,
       required this.child,
       this.radius = 24,
-      this.blur = 16,
+      this.blur = 0,
       this.padding,
       this.gradient});
 
@@ -161,27 +160,19 @@ class Glass extends StatelessWidget {
     final p = palOf(context);
     final r = BorderRadius.circular(radius);
     return Container(
-      decoration: BoxDecoration(borderRadius: r, boxShadow: softShadow(context)),
-      child: ClipRRect(
+      padding: padding,
+      decoration: BoxDecoration(
         borderRadius: r,
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: Container(
-            padding: padding,
-            decoration: BoxDecoration(
-              borderRadius: r,
-              border: Border.all(color: p.border, width: 1),
-              gradient: gradient ??
-                  LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [p.card, p.card.withOpacity(p.card.opacity * 0.55)],
-                  ),
+        border: Border.all(color: p.border, width: 1),
+        gradient: gradient ??
+            LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [p.card, p.card.withOpacity(p.card.opacity * 0.55)],
             ),
-            child: child,
-          ),
-        ),
+        boxShadow: softShadow(context),
       ),
+      child: child,
     );
   }
 }
@@ -232,7 +223,7 @@ ThemeData buildTheme(Preset p, int accent) {
     surfaceContainerHigh: p.sheet,
     surfaceContainerHighest: p.sheet,
   );
-  const tr = GlassTransitions();
+  const tr = FadeUpwardsPageTransitionsBuilder();
   final t = ThemeData(
     useMaterial3: true,
     colorScheme: cs,
