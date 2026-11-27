@@ -1,15 +1,17 @@
 {
-  "rev": 2,
+  "rev": 3,
   "books": [
     {
       "title": "NEW EPS Topik BOOK 1",
       "drive": "https://drive.google.com/file/d/1fnDKl6vMfhDPLJTkrUzn6ErWUlF8eVRP/view?usp=drivesdk",
-      "chapters": 0
+      "chapters": 0,
+      "cover": "https://raw.githubusercontent.com/alamin589170/k-learn-studio/main/covers/eps1.jpg"
     },
     {
       "title": "NEW EPS Topik BOOK 2",
       "drive": "https://drive.google.com/file/d/1XAMoVwu1LX7ass8-q8yeQtZpaKRk5A4g/view?usp=drivesdk",
-      "chapters": 0
+      "chapters": 0,
+      "cover": "https://raw.githubusercontent.com/alamin589170/k-learn-studio/main/covers/eps2.jpg"
     }
   ],
   "apps": [
