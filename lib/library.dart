@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'catalog.dart';
+import 'covers.dart';
 import 'filters.dart';
 import 'reader.dart';
 import 'style.dart';
@@ -277,20 +278,7 @@ class BookShelfState extends State<BookShelf> {
                             colors: col),
                       ),
                     ),
-                    if (thumb.isNotEmpty)
-                      Image.network(
-                        thumb,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.topCenter,
-                        errorBuilder: (c, e, s) => const SizedBox.shrink(),
-                      )
-                    else
-                      const Positioned(
-                        top: 12,
-                        left: 12,
-                        child: Icon(Icons.picture_as_pdf,
-                            color: Colors.white, size: 30),
-                      ),
+                    BookCoverImage(thumb: thumb, colors: col),
                     const Positioned.fill(
                       child: DecoratedBox(
                         decoration: BoxDecoration(
@@ -721,13 +709,9 @@ class _BookPageState extends State<BookPage> {
               height: 250,
               decoration: cardDeco(context, 26),
               clipBehavior: Clip.antiAlias,
-              child: thumb.isNotEmpty
-                  ? Image.network(thumb,
-                      fit: BoxFit.cover,
-                      alignment: Alignment.topCenter,
-                      errorBuilder: (c, e, s) => const Center(
-                          child: Icon(Icons.picture_as_pdf, size: 64)))
-                  : const Center(child: Icon(Icons.picture_as_pdf, size: 64)),
+              child: BookCoverImage(
+                  thumb: thumb,
+                  colors: const [Color(0xFF5B4BDB), Color(0xFFB65CFF)]),
             ),
             const SizedBox(height: 18),
             Text(title,

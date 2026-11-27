@@ -1,14 +1,11 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'images.dart';
 import 'style.dart';
-import 'ui.dart';
 import 'vocab.dart';
+import 'wordimg.dart';
 import 'package:url_launcher/url_launcher.dart';
 class FlipCard extends StatefulWidget {
   final Word word;
@@ -20,10 +17,9 @@ class FlipCard extends StatefulWidget {
 class _FlipCardState extends State<FlipCard>
     with SingleTickerProviderStateMixin {
   late final AnimationController c = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 500));
+      vsync: this, duration: const Duration(milliseconds: 320));
   String? path;
   bool busy = true;
-  bool useThumb = false;
 
   @override
   void initState() {
@@ -37,115 +33,23 @@ class _FlipCardState extends State<FlipCard>
     super.dispose();
   }
 
-  Future<Directory> _thumbDir() async {
-    final base = await getApplicationDocumentsDirectory();
-    final t = Directory('${base.path}/thumbs');
-    if (!await t.exists()) await t.create(recursive: true);
-    return t;
-  }
-
-  String _q() {
-    var q = widget.word.en.split(RegExp(r'[,/;(]')).first.trim().toLowerCase();
-    if (q.startsWith('to ')) q = q.substring(3);
-    return q;
-  }
-
-  // বড় (৬৪০px) 2D/ভেক্টর ছবি; শুধু শব্দের অর্থের সঙ্গে ট্যাগ মিললে নেয়
-  Future<File?> _fetchHq(Directory dir, int id) async {
-    const key = String.fromEnvironment('PIXABAY_KEY');
-    final q = _q();
-    if (key.isEmpty || q.isEmpty) return null;
-    final last = q.split(' ').last;
-    for (final type in const ['vector', 'illustration']) {
+  Future<void> loadImage() async {
+    final w = widget.word;
+    File? f;
+    try {
+      f = await WordImg.fetch(w, alive: () => mounted);
+    } catch (_) {}
+    String? p = f?.path;
+    if (p == null) {
       try {
-        final r = await http
-            .get(Uri.parse(
-                'https://pixabay.com/api/?key=$key&q=${Uri.encodeQueryComponent(q)}&image_type=$type&per_page=20&safe_search=true&order=popular&min_width=500'))
-            .timeout(const Duration(seconds: 12));
-        if (r.statusCode != 200) continue;
-        final hits = (jsonDecode(r.body) as Map)['hits'] as List;
-        Map? pick;
-        for (final h in hits) {
-          final tags = ('${(h as Map)['tags']}').toLowerCase();
-          final list = tags.split(',').map((e) => e.trim()).toList();
-          if (list.contains(q) || list.contains(last)) {
-            pick = h;
-            break;
-          }
-        }
-        if (pick == null) continue;
-        final img = await http
-            .get(Uri.parse('${pick['webformatURL']}'))
-            .timeout(const Duration(seconds: 15));
-        if (img.statusCode != 200) continue;
-        final f = File('${dir.path}/${id}_hq.jpg');
-        await f.writeAsBytes(img.bodyBytes);
-        return f;
+        p = await Images.get(w.id!);
       } catch (_) {}
     }
-    return null;
-  }
-
-  Future<void> loadImage() async {
-    final id = widget.word.id!;
-    try {
-      final dir = await _thumbDir();
-      final f = File('${dir.path}/${id}_hq.jpg');
-      if (await f.exists()) {
-        if (!mounted) return;
-        setState(() {
-          path = f.path;
-          busy = false;
-        });
-        return;
-      }
-      final none = File('${dir.path}/${id}_hq.none');
-      if (!await none.exists()) {
-        final got = await _fetchHq(dir, id);
-        if (got != null) {
-          if (!mounted) return;
-          setState(() {
-            path = got.path;
-            busy = false;
-          });
-          return;
-        }
-        await none.writeAsString('1');
-      }
-    } catch (_) {}
-    // না পেলে: নিজের তোলা/বাছা ছবি, নইলে ছবি ছাড়া সুন্দর কার্ড
-    String? p;
-    try {
-      p = await Images.get(id);
-    } catch (_) {}
     if (!mounted) return;
     setState(() {
       path = p;
       busy = false;
     });
-  }
-
-  // নতুন ছবি বসালে শব্দভাণ্ডারের ছবিও একই হয়ে যায়
-  Future<void> _syncThumb(int id, String? p) async {
-    try {
-      final dir = await _thumbDir();
-      final f = File('${dir.path}/$id.jpg');
-      final none = File('${dir.path}/$id.none');
-      final hq = File('${dir.path}/${id}_hq.jpg');
-      final hqNone = File('${dir.path}/${id}_hq.none');
-      if (p == null) {
-        if (await f.exists()) await f.delete();
-        if (await hq.exists()) await hq.delete();
-        await none.writeAsString('1');
-        await hqNone.writeAsString('1');
-      } else {
-        await File(p).copy(f.path);
-        await File(p).copy(hq.path);
-        if (await none.exists()) await none.delete();
-        if (await hqNone.exists()) await hqNone.delete();
-      }
-      imageCache.clear();
-    } catch (_) {}
   }
 
   Future<void> changeImage() async {
@@ -214,10 +118,10 @@ class _FlipCardState extends State<FlipCard>
       await Images.remove(id);
     }
     if (act == 'del') {
-      await _syncThumb(id, null);
+      await WordImg.clear(id);
     } else if (p != null) {
-      await _syncThumb(id, p);
-      p = '${(await _thumbDir()).path}/${id}_hq.jpg';
+      await WordImg.setFromFile(id, p);
+      p = (await WordImg.fileOf(id)).path;
     }
     if (!mounted) return;
     setState(() {
@@ -258,48 +162,6 @@ class _FlipCardState extends State<FlipCard>
             blurRadius: 22,
             offset: const Offset(0, 10)),
       ],
-    );
-  }
-
-  Widget imageArea() {
-    Widget inner;
-    if (path != null) {
-      inner = Image.file(
-        File(path!),
-        width: 210,
-        height: 210,
-        fit: BoxFit.cover,
-        errorBuilder: (ctx, e, s) => const Icon(Icons.broken_image,
-            size: 60, color: Colors.white54),
-      );
-    } else if (useThumb) {
-      inner = WordThumb(word: widget.word, size: 210);
-    } else if (busy) {
-      inner = const CircularProgressIndicator(color: Colors.white);
-    } else {
-      inner = const Icon(Icons.image_outlined, size: 90, color: Colors.white54);
-    }
-    return Center(
-      child: Container(
-        width: 214,
-        height: 214,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
-          color: Colors.white.withOpacity(0.14),
-          border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withOpacity(0.25),
-                blurRadius: 16,
-                offset: const Offset(0, 8)),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: inner,
-        ),
-      ),
     );
   }
 
@@ -439,7 +301,7 @@ class _FlipCardState extends State<FlipCard>
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: flip,
-      child: AnimatedBuilder(
+      child: RepaintBoundary(child: AnimatedBuilder(
         animation: c,
         builder: (context, _) {
           final t = Curves.easeInOut.transform(c.value);
@@ -462,7 +324,7 @@ class _FlipCardState extends State<FlipCard>
             child: face,
           );
         },
-      ),
+      )),
     );
   }
 }

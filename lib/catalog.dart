@@ -102,8 +102,10 @@ class Catalog {
         final cl = e['chapter_list'];
         var count = int.tryParse('${e['chapters']}') ?? 0;
         if (cl is List && cl.length > count) count = cl.length;
-        final th = '${e['thumb'] ?? ''}'.trim();
-        final thumb = th.isEmpty ? driveThumb(id) : th;
+        // কভার: ডেভেলপার "cover" এ ছবির লিংক দেয়। "drive" লিখলে Drive-এর প্রথম পাতা
+        var th = '${e['cover'] ?? e['thumb'] ?? ''}'.trim();
+        if (th == 'drive') th = driveThumb(id);
+        final thumb = th;
         final ex = await db.query('pdf_books',
             columns: ['id'], where: 'cid = ?', whereArgs: [id]);
         int bid;

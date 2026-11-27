@@ -6,7 +6,7 @@ import 'hub.dart';
 import 'library.dart';
 import 'quiz.dart';
 import 'style.dart';
-import 'vocab.dart';
+import 'notices.dart';
 
 class HomePage extends StatefulWidget {
   final void Function(int tab) goTab;
@@ -17,90 +17,59 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int total = 0;
-  int saved = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    loadStats();
-  }
-
-  Future<void> loadStats() async {
-    try {
-      final db = await Db.get();
-      final r = await db
-          .rawQuery('SELECT COUNT(*) AS c, SUM(saved) AS s FROM words');
-      if (!mounted) return;
-      setState(() {
-        total = (r.first['c'] as int?) ?? 0;
-        saved = (r.first['s'] as int?) ?? 0;
-      });
-    } catch (_) {}
-  }
-
   void push(Widget p) {
     Navigator.push(context, MaterialPageRoute(builder: (_) => p));
   }
 
-  Widget stat(String label, String value) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.14),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.white.withOpacity(0.28)),
+  Widget header() {
+    final top = MediaQuery.of(context).padding.top;
+    final p = palOf(context);
+    final on = Theme.of(context).colorScheme.onSurface;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(12, top + 8, 12, 0),
+      child: Glass(
+        radius: 30,
+        padding: const EdgeInsets.fromLTRB(8, 6, 14, 16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(0.10),
+            p.head1.withOpacity(0.16),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(value,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold)),
-            Text(label,
-                style: const TextStyle(color: Colors.white70, fontSize: 13)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget header() {
-    final top = MediaQuery.of(context).padding.top;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(12, top + 8, 12, 0),
-      child: FlagHeader(
-        menu: Padding(
-          padding: const EdgeInsets.all(8),
-          child: CircleAvatar(
-            backgroundColor: Colors.black38,
-            child: IconButton(
-              icon: const Icon(Icons.menu, color: Colors.white),
-              onPressed: widget.onMenu,
-            ),
-          ),
-        ),
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('K-Learn Studio',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold)),
-            const SizedBox(height: 2),
-            const Text('বাংলা থেকে কোরিয়ান, সহজে শিখুন',
-                style: TextStyle(color: Colors.white70, fontSize: 15)),
-            const SizedBox(height: 14),
             Row(
               children: [
-                stat('মোট শব্দ', '$total'),
-                const SizedBox(width: 12),
-                stat('সংরক্ষিত শব্দ', '$saved'),
+                IconButton(
+                  icon: Icon(Icons.menu, color: on),
+                  onPressed: widget.onMenu,
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: Icon(Icons.search, color: on),
+                  tooltip: 'শব্দ খুঁজুন',
+                  onPressed: () => widget.goTab(0),
+                ),
+                const LangBadge(),
               ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 10, top: 14),
+              child: Text('K-Learn Studio',
+                  style: TextStyle(
+                      color: on, fontSize: 34, fontWeight: FontWeight.bold)),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 10, top: 4, bottom: 18),
+              child: Text('বাংলা থেকে কোরিয়ান, সহজে শিখুন',
+                  style: TextStyle(color: softText(context), fontSize: 16)),
+            ),
+            const Padding(
+              padding: EdgeInsets.only(left: 6),
+              child: NoticeTicker(),
             ),
           ],
         ),
@@ -154,7 +123,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return RefreshIndicator(
-      onRefresh: loadStats,
+      onRefresh: () => BoeslNotices.ensure(force: true),
       child: ListView(
         padding: const EdgeInsets.only(bottom: 30),
         children: [

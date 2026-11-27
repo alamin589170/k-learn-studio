@@ -3,6 +3,8 @@ import 'filters.dart';
 import 'flipcard.dart';
 import 'style.dart';
 import 'vocab.dart';
+import 'word_editor.dart';
+import 'wordimg.dart';
 
 class FlashcardPage extends StatefulWidget {
   const FlashcardPage({super.key});
@@ -16,6 +18,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
   List<Word> all = [];
   List<Word> words = [];
   int index = 0;
+  int ver = 0;
   bool loading = true;
 
   @override
@@ -65,6 +68,23 @@ class _FlashcardPageState extends State<FlashcardPage> {
     setState(() => index = 0);
   }
 
+  Future<void> editCurrent() async {
+    if (words.isEmpty) return;
+    final w = words[index.clamp(0, words.length - 1).toInt()];
+    if (await showWordEditor(context, word: w)) {
+      if (!mounted) return;
+      setState(() => ver++);
+    }
+  }
+
+  void prefetch(int i) {
+    for (final j in [i + 1, i + 2]) {
+      if (j >= 0 && j < words.length) {
+        WordImg.fetch(words[j]);
+      }
+    }
+  }
+
   Future<void> toggleSave() async {
     final w = words[index];
     w.saved = !w.saved;
@@ -84,52 +104,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
   }
 
   Future<void> addWord() async {
-    final ko = TextEditingController();
-    final pron = TextEditingController();
-    final bn = TextEditingController();
-    final en = TextEditingController();
-    final ex = TextEditingController();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('নতুন শব্দ'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              field(ko, 'কোরিয়ান শব্দ *'),
-              field(pron, 'বাংলা উচ্চারণ'),
-              field(bn, 'বাংলা অর্থ *'),
-              field(en, 'ইংরেজি অর্থ (ছবি খোঁজার জন্য)'),
-              field(ex, 'উদাহরণ বাক্য'),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('বাতিল')),
-          FilledButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: const Text('সংরক্ষণ')),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    if (ko.text.trim().isEmpty || bn.text.trim().isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('কোরিয়ান শব্দ ও বাংলা অর্থ দিতে হবে')));
-      }
-      return;
-    }
-    await Db.insert(Word(
-      ko: ko.text.trim(),
-      pron: pron.text.trim(),
-      bn: bn.text.trim(),
-      en: en.text.trim(),
-      ex: ex.text.trim(),
-    ));
+    if (!await showWordEditor(context)) return;
     filter.clear();
     final r = await Db.search('');
     if (!mounted) return;
@@ -166,7 +141,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
         child: FlipCard(
-          key: ValueKey('${words[i].id}-$i'),
+          key: ValueKey('${words[i].id}-$i-$ver'),
           word: words[i],
         ),
       ),
@@ -220,6 +195,11 @@ class _FlashcardPageState extends State<FlashcardPage> {
           onPressed: jump,
         ),
         IconButton(
+          icon: const Icon(Icons.edit),
+          tooltip: 'এই কার্ড সম্পাদনা',
+          onPressed: editCurrent,
+        ),
+        IconButton(
           icon: const Icon(Icons.add),
           tooltip: 'নতুন শব্দ',
           onPressed: addWord,
@@ -268,7 +248,10 @@ class _FlashcardPageState extends State<FlashcardPage> {
               child: PageView.builder(
                 controller: pc,
                 itemCount: words.length,
-                onPageChanged: (i) => setState(() => index = i),
+                onPageChanged: (i) {
+                  setState(() => index = i);
+                  prefetch(i);
+                },
                 itemBuilder: (context, i) => page(i),
               ),
             ),

@@ -40,7 +40,7 @@ class AppSettings {
     for (final r in rows) {
       m[r['k'] as String] = r['v'] as String;
     }
-    final p = int.tryParse(m['preset2'] ?? '') ?? 0;
+    final p = int.tryParse(m['preset3'] ?? '') ?? 0;
     preset.value = (p >= 0 && p < kPresets.length) ? p : 0;
     if (kPresets[preset.value].dark) {
       lastDark = preset.value;
@@ -71,7 +71,7 @@ class AppSettings {
     } else {
       lastLight = i;
     }
-    await save('preset2', '$i');
+    await save('preset3', '$i');
   }
 
   // সূর্য/চাঁদ বাটন: রাত হলে দিনের থিমে, দিন হলে রাতের থিমে

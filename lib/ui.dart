@@ -1,11 +1,9 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import 'settings.dart';
 import 'style.dart';
 import 'vocab.dart';
+import 'wordimg.dart';
 
 // স্থির (এনিমেশনহীন) গ্রেডিয়েন্ট ব্যাকগ্রাউন্ড: হালকা ও দ্রুত
 class AnimatedBg extends StatelessWidget {
@@ -38,6 +36,14 @@ class AnimatedBg extends StatelessWidget {
               ),
             ),
           ),
+          if (AppSettings.preset.value == 0) ...[
+            Align(
+                alignment: const Alignment(-0.3, -1.1),
+                child: glow(const Color(0xFFD946EF), 380, 0.16)),
+            Align(
+                alignment: const Alignment(-1.2, 0.1),
+                child: glow(const Color(0xFF14B8A6), 340, 0.14)),
+          ],
           Align(
               alignment: const Alignment(-1, -0.8),
               child: glow(pr, 420, cur.dark ? 0.28 : 0.20)),
@@ -46,73 +52,6 @@ class AnimatedBg extends StatelessWidget {
               child: glow(h2, 380, cur.dark ? 0.24 : 0.16)),
         ],
       ),
-    );
-  }
-}
-
-// চালু/বন্ধ সূর্য-চাঁদ বাটন, সব পেজে ভাসমান, টেনে সরানো যায়
-class DayNightFab extends StatefulWidget {
-  const DayNightFab({super.key});
-  @override
-  State<DayNightFab> createState() => _DayNightFabState();
-}
-
-class _DayNightFabState extends State<DayNightFab> {
-  Offset? pos;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (ctx, box) {
-        final size = box.biggest;
-        final top = MediaQuery.of(ctx).padding.top;
-        final base = pos ?? Offset(size.width - 52, size.height * 0.30);
-        final x = base.dx.clamp(4.0, size.width - 48.0).toDouble();
-        final y = base.dy.clamp(top + 4, size.height - 120.0).toDouble();
-        final dark = isDark(ctx);
-        final pr = Theme.of(ctx).colorScheme.primary;
-        return Stack(
-          children: [
-            Positioned(
-              left: x,
-              top: y,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => AppSettings.toggleDayNight(dark),
-                onPanUpdate: (d) => setState(() => pos = Offset(x, y) + d.delta),
-                child: Opacity(
-                  opacity: 0.92,
-                  child: Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          pr.withOpacity(0.95),
-                          palOf(ctx).head2.withOpacity(0.85)
-                        ],
-                      ),
-                      border: Border.all(
-                          color: Colors.white.withOpacity(0.5), width: 1),
-                      boxShadow: [
-                        BoxShadow(
-                            color: pr.withOpacity(0.4),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4)),
-                      ],
-                    ),
-                    child: Icon(dark ? Icons.light_mode : Icons.dark_mode,
-                        color: Colors.white, size: 22),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }
@@ -179,6 +118,7 @@ class GenLogo extends StatelessWidget {
   }
 }
 
+
 class WordThumb extends StatefulWidget {
   final Word word;
   final double size;
@@ -189,8 +129,6 @@ class WordThumb extends StatefulWidget {
 
 class _WordThumbState extends State<WordThumb> {
   File? file;
-  static Directory? _dir;
-  static Future<void> _last = Future<void>.value();
 
   @override
   void initState() {
@@ -207,67 +145,15 @@ class _WordThumbState extends State<WordThumb> {
     }
   }
 
-  Future<Directory> _thumbDir() async {
-    final d = _dir;
-    if (d != null) return d;
-    final base = await getApplicationDocumentsDirectory();
-    final t = Directory('${base.path}/thumbs');
-    if (!await t.exists()) await t.create(recursive: true);
-    _dir = t;
-    return t;
-  }
-
-  String _query(Word w) {
-    if (w.en.isEmpty) return '';
-    return w.en.split(RegExp(r'[,/;(]')).first.trim();
-  }
-
-  Future<File?> _fetch(Directory dir, int id, String key, String q) async {
-    if (!mounted || widget.word.id != id) return null;
-    try {
-      final r = await http
-          .get(Uri.parse(
-              'https://pixabay.com/api/?key=$key&q=${Uri.encodeQueryComponent(q)}&per_page=3&safe_search=true'))
-          .timeout(const Duration(seconds: 12));
-      if (r.statusCode != 200) return null;
-      final data = jsonDecode(r.body) as Map<String, dynamic>;
-      final hits = data['hits'] as List;
-      if (hits.isEmpty) {
-        await File('${dir.path}/$id.none').writeAsString('1');
-        return null;
-      }
-      final url = (hits.first as Map)['previewURL'] as String;
-      final img =
-          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 12));
-      if (img.statusCode != 200) return null;
-      final f = File('${dir.path}/$id.jpg');
-      await f.writeAsBytes(img.bodyBytes);
-      return f;
-    } catch (_) {
-      return null;
-    }
-  }
-
   Future<void> _load() async {
-    final id = widget.word.id;
+    final w = widget.word;
+    final id = w.id;
     if (id == null) return;
     try {
-      final dir = await _thumbDir();
-      final f = File('${dir.path}/$id.jpg');
-      if (await f.exists()) {
-        if (mounted) setState(() => file = f);
-        return;
-      }
-      if (await File('${dir.path}/$id.none').exists()) return;
-      const key = String.fromEnvironment('PIXABAY_KEY');
-      final q = _query(widget.word);
-      if (key.isEmpty || q.isEmpty) return;
-      final job = _last.then((_) => _fetch(dir, id, key, q));
-      _last = job.then<void>(
-          (_) => Future<void>.delayed(const Duration(milliseconds: 700)));
-      final got = await job;
-      if (got != null && mounted && widget.word.id == id) {
-        setState(() => file = got);
+      final f = await WordImg.fetch(w,
+          alive: () => mounted && widget.word.id == id);
+      if (f != null && mounted && widget.word.id == id) {
+        setState(() => file = f);
       }
     } catch (_) {}
   }
@@ -304,14 +190,18 @@ class _WordThumbState extends State<WordThumb> {
   Widget build(BuildContext context) {
     final f = file;
     if (f == null) return _fallback();
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Image.file(
-        f,
-        width: widget.size,
-        height: widget.size,
-        fit: BoxFit.cover,
-        errorBuilder: (c, e, s) => _fallback(),
+    return RepaintBoundary(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Image.file(
+          f,
+          width: widget.size,
+          height: widget.size,
+          cacheWidth: (widget.size * 2).round(),
+          fit: BoxFit.cover,
+          gaplessPlayback: true,
+          errorBuilder: (c, e, s) => _fallback(),
+        ),
       ),
     );
   }

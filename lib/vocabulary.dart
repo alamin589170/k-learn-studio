@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'filters.dart';
+import 'word_editor.dart';
 import 'style.dart';
 import 'ui.dart';
 import 'vocab.dart';
@@ -101,55 +102,7 @@ class _VocabPageState extends State<VocabPage> {
       );
 
   Future<void> edit([Word? w]) async {
-    final ko = TextEditingController(text: w?.ko ?? '');
-    final pron = TextEditingController(text: w?.pron ?? '');
-    final bn = TextEditingController(text: w?.bn ?? '');
-    final en = TextEditingController(text: w?.en ?? '');
-    final ex = TextEditingController(text: w?.ex ?? '');
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: Text(w == null ? 'নতুন শব্দ' : 'শব্দ সম্পাদনা'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              field(ko, 'কোরিয়ান শব্দ *'),
-              field(pron, 'বাংলা উচ্চারণ'),
-              field(bn, 'বাংলা অর্থ *'),
-              field(en, 'ইংরেজি অর্থ (ছবির জন্য)'),
-              field(ex, 'উদাহরণ বাক্য'),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('বাতিল')),
-          FilledButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: const Text('সংরক্ষণ')),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    if (ko.text.trim().isEmpty || bn.text.trim().isEmpty) return;
-    if (w == null) {
-      await Db.insert(Word(
-          ko: ko.text.trim(),
-          pron: pron.text.trim(),
-          bn: bn.text.trim(),
-          en: en.text.trim(),
-          ex: ex.text.trim()));
-    } else {
-      w.ko = ko.text.trim();
-      w.pron = pron.text.trim();
-      w.bn = bn.text.trim();
-      w.en = en.text.trim();
-      w.ex = ex.text.trim();
-      await Db.update(w);
-    }
-    load();
+    if (await showWordEditor(context, word: w)) load();
   }
 
   void detail(Word w) {
@@ -224,7 +177,7 @@ class _VocabPageState extends State<VocabPage> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Container(
-        decoration: cardDeco(context, 24),
+        decoration: flatDeco(context, 24),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -336,6 +289,8 @@ class _VocabPageState extends State<VocabPage> {
                       : ListView.builder(
                           controller: sc,
                           itemExtent: rowH,
+                          cacheExtent: 400,
+                          addAutomaticKeepAlives: false,
                           padding: const EdgeInsets.only(bottom: 90),
                           itemCount: words.length,
                           itemBuilder: (c, i) => card(words[i], i),

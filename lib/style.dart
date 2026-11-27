@@ -13,6 +13,10 @@ const Color _gDark = Color(0x1FFFFFFF);
 const Color _gLight = Color(0xA8FFFFFF);
 
 const List<Preset> kPresets = [
+  // রেফারেন্স স্ক্রিনশটের থিম: গাঢ় নেভি + বেগুনি/গোলাপি আভা + কাচের কার্ড
+  Preset('Studio Night', true, Color(0xFF0F152B), Color(0xFF1B2047), Color(0x1AFFFFFF),
+      Color(0xFF8B7BFF), Color(0xFF5B4BDB), Color(0xFFB65CFF),
+      Color(0xFFEAEFFF), Color(0xFF9AA4C7), Color(0xFF171C3A)),
   Preset('Midnight Blue', true, Color(0xFF0B1226), Color(0xFF17387A), _gDark,
       Color(0xFF4DA3FF), Color(0xFF1D4ED8), Color(0xFF38BDF8),
       Color(0xFFEAF2FF), Color(0xFF9FB4D6), Color(0xFF13224A)),
@@ -58,7 +62,7 @@ const List<Preset> kPresets = [
 
 // দিন/রাত বদলের ডিফল্ট থিম
 const int kDefaultDark = 0;
-const int kDefaultLight = 7;
+const int kDefaultLight = 8;
 
 // ---------- থিমের সঙ্গে বাঁধা রঙ ----------
 class Pal extends ThemeExtension<Pal> {
@@ -116,11 +120,25 @@ Color head2(BuildContext c) => palOf(c).head2;
 
 List<BoxShadow> softShadow(BuildContext c) => [
       BoxShadow(
-        color: Colors.black.withOpacity(isDark(c) ? 0.28 : 0.07),
-        blurRadius: 12,
-        offset: const Offset(0, 5),
+        color: Colors.black.withOpacity(isDark(c) ? 0.22 : 0.06),
+        blurRadius: 8,
+        offset: const Offset(0, 3),
       ),
     ];
+
+// তালিকার সারির জন্য হালকা কার্ড (ছায়া ছাড়া, স্ক্রল দ্রুত)
+BoxDecoration flatDeco(BuildContext c, [double radius = 24]) {
+  final p = palOf(c);
+  return BoxDecoration(
+    gradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [p.card, p.card.withOpacity(p.card.opacity * 0.55)],
+    ),
+    borderRadius: BorderRadius.circular(radius),
+    border: Border.all(color: p.border, width: 1),
+  );
+}
 
 // ক্রিস্টাল কার্ড (স্বচ্ছ গ্রেডিয়েন্ট + আলোর বর্ডার)
 BoxDecoration cardDeco(BuildContext c, [double radius = 24, Color? color]) {

@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'catalog.dart';
@@ -71,6 +74,9 @@ class _ConnectedPageState extends State<ConnectedPage> {
     final db = await openBookDb();
     await db.execute(
         'CREATE TABLE IF NOT EXISTS my_apps(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, sub TEXT, pkg TEXT, url TEXT)');
+    try {
+      await db.execute('ALTER TABLE my_apps ADD COLUMN icon TEXT');
+    } catch (_) {}
     return db;
   }
 
@@ -104,6 +110,7 @@ class _ConnectedPageState extends State<ConnectedPage> {
           sub: '${m['sub'] ?? ''}',
           pkg: '${m['pkg'] ?? ''}',
           url: '${m['url'] ?? ''}',
+          icon: '${m['icon'] ?? ''}',
         ));
       }
     } catch (_) {
@@ -254,6 +261,8 @@ class _ConnectedPageState extends State<ConnectedPage> {
     final link = TextEditingController(
         text: a == null ? '' : (a.pkg.isEmpty ? '' : playUrl(a.pkg)));
     final web = TextEditingController(text: a?.url ?? '');
+    var logo = a?.icon ?? '';
+    final oldLogo = logo;
     Widget f(TextEditingController c, String label, {String? hint}) => Padding(
           padding: const EdgeInsets.only(top: 8),
           child: TextField(
@@ -266,12 +275,39 @@ class _ConnectedPageState extends State<ConnectedPage> {
         );
     final ok = await showDialog<bool>(
       context: context,
-      builder: (c) => AlertDialog(
+      builder: (c) => StatefulBuilder(builder: (c, setSt) => AlertDialog(
         title: Text(a == null ? 'নতুন অ্যাপ' : 'অ্যাপ সম্পাদনা'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Row(
+                children: [
+                  icon(AppItem(name: name.text.isEmpty ? '?' : name.text, icon: logo), 0, 56),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Wrap(
+                      spacing: 6,
+                      children: [
+                        ActionChip(
+                          avatar: const Icon(Icons.photo_library, size: 18),
+                          label: Text(logo.isEmpty ? 'লোগো বাছুন' : 'লোগো বদলান'),
+                          onPressed: () async {
+                            final p = await _pickLogo();
+                            if (p != null) setSt(() => logo = p);
+                          },
+                        ),
+                        if (logo.isNotEmpty)
+                          ActionChip(
+                            avatar: const Icon(Icons.delete_outline, size: 18),
+                            label: const Text('সরান'),
+                            onPressed: () => setSt(() => logo = ''),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
               f(name, 'অ্যাপের নাম *'),
               f(link, 'Play Store লিংক বা প্যাকেজ',
                   hint: 'https://play.google.com/store/apps/details?id=...'),
@@ -288,9 +324,13 @@ class _ConnectedPageState extends State<ConnectedPage> {
               onPressed: () => Navigator.pop(c, true),
               child: const Text('সংরক্ষণ')),
         ],
-      ),
+      )),
     );
-    if (ok != true) return;
+    if (ok != true) {
+      if (logo != oldLogo && logo.startsWith('/')) _delFile(logo);
+      return;
+    }
+    if (oldLogo != logo && oldLogo.startsWith('/')) _delFile(oldLogo);
     final n = name.text.trim();
     var pkg = link.text.trim();
     final m = RegExp(r'[?&]id=([A-Za-z0-9._]+)').firstMatch(pkg);
@@ -302,7 +342,13 @@ class _ConnectedPageState extends State<ConnectedPage> {
       return;
     }
     final db = await _db();
-    final vals = {'name': n, 'sub': sub.text.trim(), 'pkg': pkg, 'url': w};
+    final vals = {
+      'name': n,
+      'sub': sub.text.trim(),
+      'pkg': pkg,
+      'url': w,
+      'icon': logo,
+    };
     if (a == null) {
       await db.insert('my_apps', vals);
     } else {
@@ -311,9 +357,59 @@ class _ConnectedPageState extends State<ConnectedPage> {
     load();
   }
 
+  Future<String?> _pickLogo() async {
+    try {
+      final x = await ImagePicker()
+          .pickImage(source: ImageSource.gallery, maxWidth: 400, imageQuality: 90);
+      if (x == null) return null;
+      final base = await getApplicationDocumentsDirectory();
+      final d = Directory('${base.path}/logos');
+      if (!await d.exists()) await d.create(recursive: true);
+      final f = File('${d.path}/${DateTime.now().millisecondsSinceEpoch}.jpg');
+      await File(x.path).copy(f.path);
+      return f.path;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _delFile(String p) {
+    try {
+      final f = File(p);
+      if (f.existsSync()) f.deleteSync();
+    } catch (_) {}
+  }
+
   Widget icon(AppItem a, int i, [double size = 60]) {
     final fallback = GenLogo(name: a.name, hint: a.sub, size: size);
-    if (a.icon.isEmpty) return fallback;
+    if (a.icon.startsWith('/')) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(size * 0.3),
+        child: Image.file(File(a.icon),
+            width: size,
+            height: size,
+            cacheWidth: (size * 3).round(),
+            fit: BoxFit.cover,
+            errorBuilder: (c, e, s) => fallback),
+      );
+    }
+    if (a.icon.isEmpty) {
+      if (a.mine && a.url.startsWith('http')) {
+        final host = Uri.tryParse(a.url)?.host ?? '';
+        if (host.isNotEmpty) {
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(size * 0.3),
+            child: Image.network(
+                'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&url=https://$host&size=128',
+                width: size,
+                height: size,
+                fit: BoxFit.cover,
+                errorBuilder: (c, e, s) => fallback),
+          );
+        }
+      }
+      return fallback;
+    }
     return ClipRRect(
       borderRadius: BorderRadius.circular(size * 0.3),
       child: Image.network(a.icon,
