@@ -186,6 +186,16 @@
    },
    {
     "t": "দেখুন",
+    "h": "https://boesl.gov.bd/pages/news/%E0%A6%95%E0%A6%AE%E0%A6%BF%E0%A6%9F%E0%A7%87%E0%A6%A1-%E0%A6%95%E0%A6%B0%E0%A7%8D%E0%A6%AE%E0%A7%80%E0%A6%A6%E0%A7%87%E0%A6%B0-%E0%A6%85%E0%A6%A8%E0%A6%B2%E0%A6%BE%E0%A6%87%E0%A6%A8%E0%A7%87-%E0%A6%8F%E0%A6%B0%E0%A6%BE%E0%A6%87%E0%A6%AD%E0%A6%BE%E0%A6%B2-arrival-%E0%A6%B0%E0%A6%BF%E0%A6%AA%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%9F-%E0%A6%B8%E0%A6%82%E0%A6%95%E0%A7%8D%E0%A6%B0%E0%A6%BE%E0%A6%A8%E0%A7%8D%E0%A6%A4-%E0%A6%A8%E0%A7%8B%E0%A6%9F%E0%A6%BF%E0%A6%B6-bcf9faea-6a94f1f4180aff5b5539c586",
+    "bad": false
+   },
+   {
+    "t": "রেফারেন্স",
+    "h": "https://boesl.gov.bd/pages/reports/6a94f1f4180aff5b5539c584",
+    "bad": false
+   },
+   {
+    "t": "দেখুন",
     "h": "https://boesl.gov.bd/pages/news/%E0%A6%B8%E0%A6%B0%E0%A6%95%E0%A6%BE%E0%A6%B0%E0%A6%BF%E0%A6%AD%E0%A6%BE%E0%A6%AC%E0%A7%87-%E0%A6%9C%E0%A6%B0%E0%A7%8D%E0%A6%A1%E0%A6%BE%E0%A6%A8%E0%A7%87-%E0%A6%A6%E0%A6%95%E0%A7%8D%E0%A6%B7-%E0%A6%95%E0%A6%B0%E0%A7%8D%E0%A6%AE%E0%A7%80-%E0%A6%A8%E0%A6%BF%E0%A7%9F%E0%A7%8B%E0%A6%97-b38a6f-6922f791933eb65569e40cef",
     "bad": false
    },
@@ -202,16 +212,6 @@
    {
     "t": "রেফারেন্স",
     "h": "https://boesl.gov.bd/pages/reports/6922dc02dbfbab28ce05cdfa",
-    "bad": false
-   },
-   {
-    "t": "দেখুন",
-    "h": "https://boesl.gov.bd/pages/news/%E0%A6%95%E0%A6%AE%E0%A6%BF%E0%A6%9F%E0%A7%87%E0%A6%A1-%E0%A6%95%E0%A6%B0%E0%A7%8D%E0%A6%AE%E0%A7%80%E0%A6%A6%E0%A7%87%E0%A6%B0-%E0%A6%85%E0%A6%A8%E0%A6%B2%E0%A6%BE%E0%A6%87%E0%A6%A8%E0%A7%87-%E0%A6%8F%E0%A6%B0%E0%A6%BE%E0%A6%87%E0%A6%AD%E0%A6%BE%E0%A6%B2-arrival-%E0%A6%B0%E0%A6%BF%E0%A6%AA%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%9F-%E0%A6%B8%E0%A6%82%E0%A6%95%E0%A7%8D%E0%A6%B0%E0%A6%BE%E0%A6%A8%E0%A7%8D%E0%A6%A4-%E0%A6%A8%E0%A7%8B%E0%A6%9F%E0%A6%BF%E0%A6%B6-bcf9faea-6a94f1f4180aff5b5539c586",
-    "bad": false
-   },
-   {
-    "t": "রেফারেন্স",
-    "h": "https://boesl.gov.bd/pages/reports/6a94f1f4180aff5b5539c584",
     "bad": false
    },
    {
@@ -483,6 +483,11 @@
     "bad": true
    },
    {
+    "t": "ইপিএস-এর আওতায় কমিটেড (Committed) প্রার্থীদের তালিকা ও ফ্লাইট সংক্রান্ত তথ্য",
+    "h": "https://boesl.gov.bd/pages/reports/6a94f1f4180aff5b5539c584",
+    "bad": false
+   },
+   {
     "t": "সরকারিভাবে জর্ডানস্থ বিভিন্ন গার্মেন্টস কোম্পানীতে দক্ষ কর্মী নিয়োগ বিজ্ঞপ্তি",
     "h": "https://boesl.gov.bd/pages/reports/6922df90dbfbab28ce06ff13",
     "bad": false
@@ -490,11 +495,6 @@
    {
     "t": "সরকারিভাবে ব্রুনাইয়ের বিভিন্ন কোম্পানিতে কর্মী নিয়োগের বিজ্ঞপ্তি",
     "h": "https://boesl.gov.bd/pages/reports/6922dc02dbfbab28ce05cdfa",
-    "bad": false
-   },
-   {
-    "t": "ইপিএস-এর আওতায় কমিটেড (Committed) প্রার্থীদের তালিকা ও ফ্লাইট সংক্রান্ত তথ্য",
-    "h": "https://boesl.gov.bd/pages/reports/6a94f1f4180aff5b5539c584",
     "bad": false
    },
    {
