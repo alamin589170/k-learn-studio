@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'style.dart';
 
 class Notice {
@@ -20,10 +22,13 @@ class NewsSource {
 // অফলাইনে জমা থাকা তালিকা দেখায়। কমপক্ষে ২ ঘণ্টা পরপর আনে।
 class BoeslNotices {
   static const String home = 'https://boesl.gov.bd/';
+  static const String rawUrl =
+      'https://raw.githubusercontent.com/alamin589170/k-learn-studio/main/data/notices.json';
   static const List<NewsSource> sources = [
-    NewsSource('latest', 'সর্বশেষ খবর', 'https://boesl.gov.bd/views/latest-news'),
-    NewsSource('news', 'নিউজ ও নোটিশ', 'https://boesl.gov.bd/pages/news/'),
+    NewsSource('news', 'সর্বশেষ খবর', 'https://boesl.gov.bd/pages/news/'),
+    NewsSource('board', 'নোটিশ বোর্ড', 'https://boesl.gov.bd/views/latest-news'),
   ];
+  static final ValueNotifier<bool> failed = ValueNotifier(false);
   static const Duration _every = Duration(hours: 2);
   static final Map<String, ValueNotifier<List<Notice>>> lists = {
     for (final s in sources) s.key: ValueNotifier<List<Notice>>(const [])
@@ -58,6 +63,32 @@ class BoeslNotices {
     } catch (_) {}
   }
 
+  // GitHub-এর data/notices.json (Actions নিজে আপডেট করে) থেকে পড়ে
+  static Future<bool> _fromRepo() async {
+    try {
+      final r = await http
+          .get(Uri.parse('$rawUrl?t=${DateTime.now().millisecondsSinceEpoch}'))
+          .timeout(const Duration(seconds: 12));
+      if (r.statusCode != 200) return false;
+      final m = jsonDecode(utf8.decode(r.bodyBytes)) as Map;
+      final boxes = m['boxes'];
+      if (boxes is! Map) return false;
+      var any = false;
+      for (final s in sources) {
+        final raw = boxes[s.key];
+        if (raw is List && raw.isNotEmpty) {
+          lists[s.key]!.value = [
+            for (final e in raw) Notice('${(e as Map)['t']}', '${e['u']}')
+          ];
+          any = true;
+        }
+      }
+      return any;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static Future<void> ensure({bool force = false}) async {
     await _readCache();
     if (_busy) return;
@@ -65,12 +96,16 @@ class BoeslNotices {
     if (!force && lt != null && DateTime.now().difference(lt) < _every) return;
     _busy = true;
     try {
-      var any = false;
-      for (final s in sources) {
-        final l = await _fetch(s.url);
-        if (l.isNotEmpty) {
-          lists[s.key]!.value = l;
-          any = true;
+      var any = await _fromRepo();
+      if (!any) {
+        // লুকানো ব্রাউজারে পাতা খুলে পড়া (জাভাস্ক্রিপ্টে তৈরি পাতাও পড়া যায়)
+        for (final s in sources) {
+          var l = await _viaWebView(s.url);
+          if (l.isEmpty) l = await _fetch(s.url);
+          if (l.isNotEmpty) {
+            lists[s.key]!.value = l;
+            any = true;
+          }
         }
       }
       if (any) {
@@ -84,6 +119,7 @@ class BoeslNotices {
         }));
         _lastTry = DateTime.now();
       }
+      failed.value = lists.values.every((v) => v.value.isEmpty);
     } catch (_) {
     } finally {
       _busy = false;
@@ -93,6 +129,7 @@ class BoeslNotices {
   // সেটিংসের "নোটিশ পরীক্ষা" বাটনের জন্য: কী আসছে তার রিপোর্ট
   static Future<String> diagnose() async {
     final b = StringBuffer();
+    b.writeln('● GitHub তালিকা: ${await _fromRepo() ? "পাওয়া গেছে" : "পাওয়া যায়নি"}\n');
     for (final s in sources) {
       b.writeln('● ${s.label}\n${s.url}');
       try {
@@ -226,6 +263,36 @@ class BoeslNotices {
     return out;
   }
 
+  static const String _js = r'''(function(){var skip=['সকল','সব','বিস্তারিত','আরও','আরো','হোম'];var items=[],loose=[],seen={};document.querySelectorAll('a[href]').forEach(function(a){var t=(a.innerText||a.textContent||'').replace(/\s+/g,' ').trim();var h=a.href;if(!t||h.indexOf('javascript')==0||h.slice(-1)=='#')return;if(t.length<12||skip.indexOf(t)>=0||seen[t])return;seen[t]=1;var bad=a.closest('nav,header,footer,aside,[class*="menu"],[class*="nav"],[id*="menu"],[id*="nav"],[class*="footer"],[class*="breadcrumb"]');loose.push({t:t,u:h});if(!bad)items.push({t:t,u:h});});var r=items.length?items:loose;return JSON.stringify(r.slice(0,20));})()''';
+
+  static Future<List<Notice>> _viaWebView(String page) async {
+    final done = Completer<List<Notice>>();
+    try {
+      late final WebViewController c;
+      c = WebViewController();
+      await c.setJavaScriptMode(JavaScriptMode.unrestricted);
+      await c.setNavigationDelegate(NavigationDelegate(onPageFinished: (_) async {
+        await Future<void>.delayed(const Duration(seconds: 3));
+        try {
+          final r = await c.runJavaScriptReturningResult(_js);
+          var t = r.toString();
+          if (t.startsWith('"')) t = jsonDecode(t) as String;
+          final l = (jsonDecode(t) as List)
+              .map((e) => Notice('${(e as Map)['t']}', '${e['u']}'))
+              .toList();
+          if (!done.isCompleted) done.complete(l);
+        } catch (_) {
+          if (!done.isCompleted) done.complete(const <Notice>[]);
+        }
+      }));
+      await c.loadRequest(Uri.parse(page));
+      return await done.future
+          .timeout(const Duration(seconds: 35), onTimeout: () => const <Notice>[]);
+    } catch (_) {
+      return const [];
+    }
+  }
+
   static Future<List<Notice>> _fetch(String page) async {
     try {
       final r = await http
@@ -239,7 +306,7 @@ class BoeslNotices {
   }
 }
 
-// ছোট বাক্স: এক লাইন করে নোটিশ নিচ থেকে ওপরে সরতে থাকে (ওয়েবসাইটের মতো)
+// চিকন এক লাইনের বাক্স: নোটিশগুলো এক লাইন করে নিচ থেকে ওপরে উঠে বদলায়
 class NewsBox extends StatefulWidget {
   final NewsSource source;
   final Color accent;
@@ -248,36 +315,32 @@ class NewsBox extends StatefulWidget {
   State<NewsBox> createState() => _NewsBoxState();
 }
 
-class _NewsBoxState extends State<NewsBox> with SingleTickerProviderStateMixin {
-  static const double rowH = 28;
-  static const int visible = 3;
-  late final AnimationController c =
-      AnimationController(vsync: this, duration: const Duration(seconds: 10));
+class _NewsBoxState extends State<NewsBox> {
+  int idx = 0;
+  Timer? timer;
   late final ValueNotifier<List<Notice>> data = BoeslNotices.lists[widget.source.key]!;
 
   @override
   void initState() {
     super.initState();
     data.addListener(_changed);
+    BoeslNotices.failed.addListener(_changed);
     BoeslNotices.ensure();
-    _changed();
+    timer = Timer.periodic(const Duration(seconds: 3), (_) {
+      final n = data.value.length;
+      if (n > 1 && mounted) setState(() => idx = (idx + 1) % n);
+    });
   }
 
   void _changed() {
-    if (!mounted) return;
-    final n = data.value.length;
-    c.stop();
-    if (n > visible) {
-      c.duration = Duration(milliseconds: n * 2400);
-      c.repeat();
-    }
-    setState(() {});
+    if (mounted) setState(() => idx = 0);
   }
 
   @override
   void dispose() {
+    timer?.cancel();
     data.removeListener(_changed);
-    c.dispose();
+    BoeslNotices.failed.removeListener(_changed);
     super.dispose();
   }
 
@@ -287,83 +350,64 @@ class _NewsBoxState extends State<NewsBox> with SingleTickerProviderStateMixin {
     } catch (_) {}
   }
 
-  Widget row(Notice n) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => open(n.url),
-      child: SizedBox(
-        height: rowH,
-        child: Row(
-          children: [
-            Icon(Icons.check_circle, size: 16, color: widget.accent),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(n.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 14)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final l = data.value;
-    final h = rowH * visible;
-    Widget body;
-    if (l.isEmpty) {
-      body = row(Notice('লোড হচ্ছে… (ইন্টারনেট চালু রাখুন) — সাইট খুলতে চাপুন',
-          widget.source.url));
-    } else if (l.length <= visible) {
-      body = Column(children: [for (final n in l) row(n)]);
-    } else {
-      final total = rowH * l.length;
-      body = AnimatedBuilder(
-        animation: c,
-        builder: (context, _) => OverflowBox(
-          alignment: Alignment.topLeft,
-          minHeight: 0,
-          maxHeight: double.infinity,
-          child: Transform.translate(
-            offset: Offset(0, -c.value * total),
-            child: Column(children: [for (final n in [...l, ...l]) row(n)]),
-          ),
+    final Notice n = l.isEmpty
+        ? Notice(
+            BoeslNotices.failed.value
+                ? 'এখন আনা যায়নি — সাইট খুলতে চাপুন'
+                : 'লোড হচ্ছে…',
+            widget.source.url)
+        : l[idx % l.length];
+    final cur = ValueKey<String>('${widget.source.key}-$idx-${l.length}');
+    return GestureDetector(
+      onTap: () => open(n.url),
+      child: Container(
+        height: 42,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: widget.accent.withOpacity(0.55)),
+          color: widget.accent.withOpacity(0.08),
         ),
-      );
-    }
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 10, 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: widget.accent.withOpacity(0.55)),
-        color: widget.accent.withOpacity(0.08),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.campaign_rounded, size: 18, color: widget.accent),
-              const SizedBox(width: 6),
-              Text(widget.source.label,
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: widget.accent)),
-              const Spacer(),
-              GestureDetector(
-                onTap: () => open(widget.source.url),
-                child: Text('সকল ›',
-                    style: TextStyle(fontSize: 12, color: softText(context))),
+        child: Row(
+          children: [
+            Icon(Icons.campaign_rounded, size: 18, color: widget.accent),
+            const SizedBox(width: 6),
+            Text(widget.source.label,
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: widget.accent)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ClipRect(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 450),
+                  transitionBuilder: (child, anim) {
+                    final incoming = child.key == cur;
+                    return SlideTransition(
+                      position: Tween<Offset>(
+                        begin: incoming ? const Offset(0, 1) : const Offset(0, -1),
+                        end: Offset.zero,
+                      ).animate(anim),
+                      child: child,
+                    );
+                  },
+                  child: Align(
+                    key: cur,
+                    alignment: Alignment.centerLeft,
+                    child: Text(n.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 13.5)),
+                  ),
+                ),
               ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          SizedBox(height: h, child: ClipRect(child: body)),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
