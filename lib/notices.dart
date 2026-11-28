@@ -265,8 +265,7 @@ class BoeslNotices {
       for (final n in l)
         if (!bad.hasMatch(n.title) &&
             !bad.hasMatch(n.url) &&
-            !file.hasMatch(n.url) &&
-            (Uri.tryParse(n.url)?.host.endsWith('boesl.gov.bd') ?? false))
+            !file.hasMatch(n.url))
           n
     ];
   }
