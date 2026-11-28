@@ -4,6 +4,9 @@ on:
   schedule:
     - cron: '*/30 * * * *'
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/notices.yml'
 
 permissions:
   contents: write
@@ -90,7 +93,7 @@ jobs:
             let old = {};
             try { old = JSON.parse(fs.readFileSync('data/notices.json', 'utf8')); } catch (e) {}
             for (const k of Object.keys(out.boxes)) {
-              if (!out.boxes[k].length && old.boxes && old.boxes[k]) out.boxes[k] = old.boxes[k];
+              if (!out.boxes[k].length && old.boxes && old.boxes[k]) out.boxes[k] = old.boxes[k].filter(i => !/স্ক্রিন\s*রিডার|screen\s*reader|nvda|nvaccess/i.test(i.t + ' ' + i.u) && !/\.(exe|apk|zip|msi|dmg)(\?|$)/i.test(i.u));
             }
             fs.writeFileSync('data/notices.json', JSON.stringify(out, null, 1));
             fs.writeFileSync('data/boesl_debug.json', JSON.stringify(debug, null, 1));
