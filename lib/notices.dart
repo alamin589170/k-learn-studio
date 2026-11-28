@@ -55,7 +55,8 @@ class BoeslNotices {
           final l = raw
               .map((e) => Notice('${(e as Map)['t']}', '${e['u']}'))
               .toList();
-          if (l.isNotEmpty) lists[s.key]!.value = l;
+          final cl = _onlyNotices(l);
+          if (cl.isNotEmpty) lists[s.key]!.value = cl;
         }
       }
       final ts = int.tryParse('${m['ts']}');
@@ -77,9 +78,11 @@ class BoeslNotices {
       for (final s in sources) {
         final raw = boxes[s.key];
         if (raw is List && raw.isNotEmpty) {
-          lists[s.key]!.value = [
+          final cl = _onlyNotices([
             for (final e in raw) Notice('${(e as Map)['t']}', '${e['u']}')
-          ];
+          ]);
+          if (cl.isEmpty) continue;
+          lists[s.key]!.value = cl;
           any = true;
         }
       }
@@ -102,6 +105,7 @@ class BoeslNotices {
         for (final s in sources) {
           var l = await _viaWebView(s.url);
           if (l.isEmpty) l = await _fetch(s.url);
+          l = _onlyNotices(l);
           if (l.isNotEmpty) {
             lists[s.key]!.value = l;
             any = true;
@@ -250,6 +254,21 @@ class BoeslNotices {
       }
     }
     return _dedupe(res);
+  }
+
+  // নোটিশ নয় এমন লিংক (স্ক্রিন রিডার, ফাইল ডাউনলোড, বাইরের সাইট) বাদ
+  static List<Notice> _onlyNotices(List<Notice> l) {
+    final bad = RegExp(r'স্ক্রিন\s*রিডার|screen\s*reader|nvda|nvaccess',
+        caseSensitive: false);
+    final file = RegExp(r'\.(exe|apk|zip|msi|dmg)(\?|$)', caseSensitive: false);
+    return [
+      for (final n in l)
+        if (!bad.hasMatch(n.title) &&
+            !bad.hasMatch(n.url) &&
+            !file.hasMatch(n.url) &&
+            (Uri.tryParse(n.url)?.host.endsWith('boesl.gov.bd') ?? false))
+          n
+    ];
   }
 
   static List<Notice> _dedupe(List<Notice> l) {
