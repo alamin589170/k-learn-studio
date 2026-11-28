@@ -100,6 +100,16 @@ class BoeslNotices {
     _busy = true;
     try {
       var any = await _fromRepo();
+      // GitHub-এর তালিকা ছোট (৩টির কম) হলে সরাসরি সাইট থেকেও চেষ্টা
+      final thin = lists.values.any((v) => v.value.length < 3);
+      if (any && thin) {
+        for (final s in sources) {
+          var l = await _viaWebView(s.url);
+          if (l.isEmpty) l = await _fetch(s.url);
+          l = _onlyNotices(l);
+          if (l.length > lists[s.key]!.value.length) lists[s.key]!.value = l;
+        }
+      }
       if (!any) {
         // লুকানো ব্রাউজারে পাতা খুলে পড়া (জাভাস্ক্রিপ্টে তৈরি পাতাও পড়া যায়)
         for (final s in sources) {
