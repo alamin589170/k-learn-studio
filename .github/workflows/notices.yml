@@ -57,7 +57,7 @@ jobs:
                     if (!t || h.startsWith('javascript') || h.endsWith('#')) continue;
                     const bad = !!a.closest('nav, header, footer, aside, [class*="menu"], [class*="nav"], [id*="menu"], [id*="nav"], [class*="footer"], [class*="breadcrumb"]');
                     all.push({ t: t.slice(0, 80), h, bad });
-                    if (/স্ক্রিন\s*রিডার|screen\s*reader|nvda|nvaccess/i.test(t + ' ' + h) || /\.(exe|apk|zip|msi|dmg)(\?|$)/i.test(h) || !/boesl\.gov\.bd/.test(new URL(h).hostname)) continue;
+                    if (/স্ক্রিন\s*রিডার|screen\s*reader|nvda|nvaccess/i.test(t + ' ' + h) || /\.(exe|apk|zip|msi|dmg)(\?|$)/i.test(h)) continue;
                     if (t.length < 12 || skip.has(t)) continue;
                     loose.push({ t, u: h });
                     if (!bad) items.push({ t, u: h });
