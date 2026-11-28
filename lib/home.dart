@@ -71,11 +71,13 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.only(left: 6),
               child: Column(
                 children: [
-                  for (final f in BoeslNotices.feeds)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: NoticeBox(feed: f),
-                    ),
+                  NewsBox(
+                      source: BoeslNotices.sources[0],
+                      accent: const Color(0xFF34D399)),
+                  const SizedBox(height: 8),
+                  NewsBox(
+                      source: BoeslNotices.sources[1],
+                      accent: const Color(0xFFFB7185)),
                 ],
               ),
             ),
