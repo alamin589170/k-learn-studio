@@ -10,6 +10,7 @@ import 'library.dart';
 import 'quiz.dart';
 import 'settings.dart';
 import 'style.dart';
+import 'report.dart';
 import 'sync.dart';
 import 'ui.dart';
 import 'vocabulary.dart';
@@ -205,6 +206,13 @@ class _ShellState extends State<Shell> {
               sectionTitle('APP'),
               item(Icons.settings, 'সেটিংস',
                   () => openPage(ctx, const SettingsPage())),
+              item(Icons.flag_outlined, 'ভুল জানান / মতামত',
+                  () {
+                    key.currentState?.closeDrawer();
+                    Future<void>.delayed(const Duration(milliseconds: 220), () {
+                      if (mounted) showReportDialog(context, 'সাধারণ মতামত');
+                    });
+                  }),
               item(Icons.info_outline, 'অ্যাপ ও ডেভেলপার',
                   () => openPage(ctx, const AboutPage())),
             ],

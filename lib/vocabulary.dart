@@ -3,6 +3,7 @@ import 'filters.dart';
 import 'word_editor.dart';
 import 'resume.dart';
 import 'style.dart';
+import 'report.dart';
 import 'ui.dart';
 import 'vocab.dart';
 
@@ -168,6 +169,17 @@ class _VocabPageState extends State<VocabPage> {
                 SelectableText(w.ex, style: const TextStyle(fontSize: 16)),
               ],
               const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  icon: const Icon(Icons.flag_outlined),
+                  label: const Text('ভুল জানান'),
+                  onPressed: () {
+                    Navigator.pop(c);
+                    showReportDialog(context, 'শব্দ: ${w.ko} — ${w.bn}');
+                  },
+                ),
+              ),
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(

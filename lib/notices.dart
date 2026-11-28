@@ -306,7 +306,7 @@ class BoeslNotices {
   }
 }
 
-// চিকন এক লাইনের বাক্স: নোটিশগুলো এক লাইন করে নিচ থেকে ওপরে উঠে বদলায়
+// চিকন এক লাইনের বাক্স: লেখা ডান থেকে বামে চলে; শেষ হলে পরের নোটিশ নিচ থেকে ওপরে ওঠে
 class NewsBox extends StatefulWidget {
   final NewsSource source;
   final Color accent;
@@ -317,7 +317,7 @@ class NewsBox extends StatefulWidget {
 
 class _NewsBoxState extends State<NewsBox> {
   int idx = 0;
-  Timer? timer;
+  int round = 0;
   late final ValueNotifier<List<Notice>> data = BoeslNotices.lists[widget.source.key]!;
 
   @override
@@ -326,19 +326,28 @@ class _NewsBoxState extends State<NewsBox> {
     data.addListener(_changed);
     BoeslNotices.failed.addListener(_changed);
     BoeslNotices.ensure();
-    timer = Timer.periodic(const Duration(seconds: 3), (_) {
-      final n = data.value.length;
-      if (n > 1 && mounted) setState(() => idx = (idx + 1) % n);
-    });
   }
 
   void _changed() {
-    if (mounted) setState(() => idx = 0);
+    if (mounted) {
+      setState(() {
+        idx = 0;
+        round++;
+      });
+    }
+  }
+
+  void _next() {
+    if (!mounted) return;
+    setState(() {
+      final n = data.value.length;
+      if (n > 0) idx = (idx + 1) % n;
+      round++;
+    });
   }
 
   @override
   void dispose() {
-    timer?.cancel();
     data.removeListener(_changed);
     BoeslNotices.failed.removeListener(_changed);
     super.dispose();
@@ -353,14 +362,15 @@ class _NewsBoxState extends State<NewsBox> {
   @override
   Widget build(BuildContext context) {
     final l = data.value;
-    final Notice n = l.isEmpty
+    final empty = l.isEmpty;
+    final Notice n = empty
         ? Notice(
             BoeslNotices.failed.value
                 ? 'এখন আনা যায়নি — সাইট খুলতে চাপুন'
                 : 'লোড হচ্ছে…',
             widget.source.url)
         : l[idx % l.length];
-    final cur = ValueKey<String>('${widget.source.key}-$idx-${l.length}');
+    final cur = ValueKey<String>('${widget.source.key}-$idx-$round-${l.length}');
     return GestureDetector(
       onTap: () => open(n.url),
       child: Container(
@@ -395,13 +405,10 @@ class _NewsBoxState extends State<NewsBox> {
                       child: child,
                     );
                   },
-                  child: Align(
+                  child: _Line(
                     key: cur,
-                    alignment: Alignment.centerLeft,
-                    child: Text(n.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 13.5)),
+                    text: n.title,
+                    onDone: empty ? null : _next,
                   ),
                 ),
               ),
@@ -410,5 +417,82 @@ class _NewsBoxState extends State<NewsBox> {
         ),
       ),
     );
+  }
+}
+
+// একটি লাইন: ছোট হলে স্থির থাকে, বড় হলে ডান থেকে বামে চলে, তারপর onDone
+class _Line extends StatefulWidget {
+  final String text;
+  final VoidCallback? onDone;
+  const _Line({super.key, required this.text, this.onDone});
+  @override
+  State<_Line> createState() => _LineState();
+}
+
+class _LineState extends State<_Line> with SingleTickerProviderStateMixin {
+  static const style = TextStyle(fontSize: 13.5);
+  late final AnimationController ctl = AnimationController(vsync: this);
+  bool started = false;
+  bool dead = false;
+
+  @override
+  void dispose() {
+    dead = true;
+    ctl.dispose();
+    super.dispose();
+  }
+
+  Future<void> run(double overflow) async {
+    await Future.delayed(const Duration(milliseconds: 1200));
+    if (dead) return;
+    if (overflow > 0) {
+      final ms = (overflow / 45 * 1000).round().clamp(2000, 60000);
+      try {
+        await ctl.animateTo(1,
+            duration: Duration(milliseconds: ms), curve: Curves.linear);
+      } catch (_) {
+        return;
+      }
+      if (dead) return;
+      await Future.delayed(const Duration(milliseconds: 1000));
+    } else {
+      await Future.delayed(const Duration(milliseconds: 1800));
+    }
+    if (dead) return;
+    widget.onDone?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, c) {
+      final tp = TextPainter(
+        text: TextSpan(text: widget.text, style: style),
+        maxLines: 1,
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final over = tp.width - c.maxWidth;
+      if (!started && widget.onDone != null) {
+        started = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!dead) run(over);
+        });
+      }
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: AnimatedBuilder(
+          animation: ctl,
+          builder: (context, _) => Transform.translate(
+            offset: Offset(over > 0 ? -over * ctl.value : 0, 0),
+            child: OverflowBox(
+              alignment: Alignment.centerLeft,
+              minWidth: 0,
+              maxWidth: double.infinity,
+              child: Text(widget.text,
+                  maxLines: 1, softWrap: false, style: style),
+            ),
+          ),
+        ),
+      );
+    });
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'filters.dart';
 import 'flipcard.dart';
 import 'style.dart';
+import 'report.dart';
 import 'resume.dart';
 import 'vocab.dart';
 import 'word_editor.dart';
@@ -207,6 +208,16 @@ class _FlashcardPageState extends State<FlashcardPage> {
           icon: const Icon(Icons.tag),
           tooltip: 'নম্বরে যান',
           onPressed: jump,
+        ),
+        IconButton(
+          icon: const Icon(Icons.flag_outlined),
+          tooltip: 'ভুল জানান',
+          onPressed: () {
+            if (words.isEmpty) return;
+            final w = words[index.clamp(0, words.length - 1).toInt()];
+            showReportDialog(context,
+                'ফ্ল্যাশকার্ড #${index + 1}: ${w.ko} — ${w.bn}');
+          },
         ),
         IconButton(
           icon: const Icon(Icons.edit),

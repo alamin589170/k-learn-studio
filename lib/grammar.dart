@@ -6,6 +6,7 @@ import 'grammar_data.dart';
 import 'reader.dart';
 import 'resume.dart';
 import 'style.dart';
+import 'report.dart';
 import 'vocab.dart';
 
 class MyLesson {
@@ -539,6 +540,14 @@ class _GrammarDetailState extends State<GrammarDetail> {
       appBar: AppBar(
         title: Text('${cur + 1} / $total'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.flag_outlined),
+            tooltip: 'ভুল জানান',
+            onPressed: () {
+              final g = widget.list[cur];
+              showReportDialog(context, 'গ্রামার ${g.n}: ${g.title}');
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.tag),
             tooltip: 'নম্বরে যান',
