@@ -4,6 +4,7 @@ import 'filters.dart' show askNumber;
 import 'grammar120_data.dart';
 import 'grammar_data.dart';
 import 'reader.dart';
+import 'resume.dart';
 import 'style.dart';
 import 'vocab.dart';
 
@@ -144,40 +145,63 @@ class LessonView extends StatelessWidget {
 
 // ---------- মূল পেজ (৩টি ট্যাব) ----------
 
-class GrammarPage extends StatelessWidget {
+class GrammarPage extends StatefulWidget {
   final VoidCallback? onMenu;
   const GrammarPage({super.key, this.onMenu});
+  @override
+  State<GrammarPage> createState() => _GrammarPageState();
+}
+
+class _GrammarPageState extends State<GrammarPage>
+    with SingleTickerProviderStateMixin {
+  late final TabController tc = TabController(length: 3, vsync: this);
+
+  @override
+  void initState() {
+    super.initState();
+    Resume.getInt('gram_tab').then((i) {
+      if (i != null && i > 0 && i < 3 && mounted) tc.index = i;
+    });
+    tc.addListener(() {
+      if (!tc.indexIsChanging) Resume.setInt('gram_tab', tc.index);
+    });
+  }
+
+  @override
+  void dispose() {
+    tc.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          scrolledUnderElevation: 0,
-          centerTitle: true,
-          leading: onMenu == null
-              ? null
-              : IconButton(icon: const Icon(Icons.menu), onPressed: onMenu),
-          title: const Text('গ্রামার',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'EPS ব্যাকরণ'),
-              Tab(text: 'পাঠ'),
-              Tab(text: 'PDF'),
-            ],
-          ),
-        ),
-        body: const TabBarView(
-          children: [
-            _G120Tab(),
-            _LessonsTab(),
-            _PdfTab(),
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leading: widget.onMenu == null
+            ? null
+            : IconButton(icon: const Icon(Icons.menu), onPressed: widget.onMenu),
+        title: const Text('গ্রামার',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        bottom: TabBar(
+          controller: tc,
+          tabs: const [
+            Tab(text: 'EPS ব্যাকরণ'),
+            Tab(text: 'পাঠ'),
+            Tab(text: 'PDF'),
           ],
         ),
+      ),
+      body: TabBarView(
+        controller: tc,
+        children: const [
+          _G120Tab(),
+          _LessonsTab(),
+          _PdfTab(),
+        ],
       ),
     );
   }
@@ -203,6 +227,18 @@ class _G120TabState extends State<_G120Tab> {
   final ScrollController sc = ScrollController();
   String q = '';
   static const double rowH = 80;
+
+  @override
+  void initState() {
+    super.initState();
+    Resume.getInt('g120').then((i) {
+      if (i == null || i <= 0 || !mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!sc.hasClients) return;
+        sc.jumpTo((i * rowH).clamp(0.0, sc.position.maxScrollExtent).toDouble());
+      });
+    });
+  }
 
   List<G120> get shown {
     final t = q.trim().toLowerCase();
@@ -266,7 +302,14 @@ class _G120TabState extends State<_G120Tab> {
         Expanded(
           child: list.isEmpty
               ? const Center(child: Text('কিছু পাওয়া যায়নি'))
-              : ListView.builder(
+              : NotificationListener<ScrollEndNotification>(
+                  onNotification: (n) {
+                    if (q.isEmpty && sc.hasClients) {
+                      Resume.setInt('g120', (sc.offset / rowH).round());
+                    }
+                    return false;
+                  },
+                  child: ListView.builder(
                   controller: sc,
                   itemExtent: rowH,
                   padding: const EdgeInsets.only(bottom: 90),
@@ -335,7 +378,7 @@ class _G120TabState extends State<_G120Tab> {
                       ),
                     );
                   },
-                ),
+                )),
         ),
       ],
     );
@@ -510,7 +553,11 @@ class _GrammarDetailState extends State<GrammarDetail> {
         child: PageView.builder(
           controller: pc,
           itemCount: total,
-          onPageChanged: (i) => setState(() => cur = i),
+          onPageChanged: (i) {
+            setState(() => cur = i);
+            final n = widget.list[i].n - 1;
+            if (n >= 0) Resume.setInt('g120', n);
+          },
           itemBuilder: (c, i) => body(widget.list[i]),
         ),
       ),

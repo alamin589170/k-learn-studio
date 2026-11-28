@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'about.dart';
+import 'devsync.dart';
+import 'notices.dart';
+import 'resume.dart';
 import 'style.dart';
 import 'vocab.dart';
 
@@ -203,7 +206,7 @@ class SettingsPage extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _title('থিম', 'ক্রিস্টাল থিম বেছে নিন (সূর্য/চাঁদ বাটনেও দিন-রাত বদলায়)'),
+            _title('থিম', 'ক্রিস্টাল থিম বেছে নিন'),
             ValueListenableBuilder<int>(
               valueListenable: AppSettings.preset,
               builder: (c, cur, _) => Wrap(
@@ -336,9 +339,105 @@ class SettingsPage extends StatelessWidget {
                 MaterialPageRoute(builder: (_) => const AboutPage()),
               ),
             ),
+            _title('ডেভেলপার (শুধু মালিকের জন্য)',
+                'টোকেন দিলে আপনার সংশোধন নিজে থেকে সবার অ্যাপে যাবে'),
+            const _DevSection(),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DevSection extends StatefulWidget {
+  const _DevSection();
+  @override
+  State<_DevSection> createState() => _DevSectionState();
+}
+
+class _DevSectionState extends State<_DevSection> {
+  final TextEditingController tc = TextEditingController();
+  String status = '';
+  bool busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    DevSync.token().then((t) {
+      if (mounted) setState(() => tc.text = t);
+    });
+  }
+
+  @override
+  void dispose() {
+    tc.dispose();
+    super.dispose();
+  }
+
+  Future<void> save() async {
+    setState(() {
+      busy = true;
+      status = 'যাচাই হচ্ছে...';
+    });
+    await Resume.setStr('devtoken', tc.text.trim());
+    final s = await DevSync.check();
+    if (mounted) {
+      setState(() {
+        busy = false;
+        status = s;
+      });
+    }
+  }
+
+  Future<void> diag() async {
+    setState(() {
+      busy = true;
+      status = 'নোটিশ পরীক্ষা হচ্ছে...';
+    });
+    final r = await BoeslNotices.diagnose();
+    if (!mounted) return;
+    setState(() {
+      busy = false;
+      status = '';
+    });
+    showDialog<void>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('নোটিশ পরীক্ষা'),
+        content: SingleChildScrollView(child: SelectableText(r)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c), child: const Text('বন্ধ')),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: tc,
+          obscureText: true,
+          decoration: const InputDecoration(
+              labelText: 'GitHub টোকেন (শুধু এই ফোনে থাকে)',
+              border: OutlineInputBorder()),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          children: [
+            FilledButton(
+                onPressed: busy ? null : save, child: const Text('সংরক্ষণ ও যাচাই')),
+            OutlinedButton(
+                onPressed: busy ? null : diag, child: const Text('নোটিশ পরীক্ষা')),
+          ],
+        ),
+        if (status.isNotEmpty)
+          Padding(padding: const EdgeInsets.only(top: 8), child: Text(status)),
+        const SizedBox(height: 24),
+      ],
     );
   }
 }

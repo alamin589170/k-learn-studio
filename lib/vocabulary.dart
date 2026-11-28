@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'filters.dart';
 import 'word_editor.dart';
+import 'resume.dart';
 import 'style.dart';
 import 'ui.dart';
 import 'vocab.dart';
@@ -20,6 +21,8 @@ class _VocabPageState extends State<VocabPage> {
   String q = '';
   bool loading = true;
   static const double rowH = 132;
+  bool restored = false;
+  String get _key => widget.savedOnly ? 'vocab_saved' : 'vocab';
 
   @override
   void initState() {
@@ -42,6 +45,17 @@ class _VocabPageState extends State<VocabPage> {
       words = applyFilter(r, filter);
       loading = false;
     });
+    if (!restored) {
+      restored = true;
+      final idx = await Resume.getInt(_key);
+      if (idx != null && idx > 0 && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!sc.hasClients) return;
+          final t = (idx * rowH).clamp(0.0, sc.position.maxScrollExtent).toDouble();
+          sc.jumpTo(t);
+        });
+      }
+    }
   }
 
   void refilter() {
@@ -286,7 +300,14 @@ class _VocabPageState extends State<VocabPage> {
                           child: Text(widget.savedOnly
                               ? 'কোনো সংরক্ষিত শব্দ নেই'
                               : 'কোনো শব্দ পাওয়া যায়নি'))
-                      : ListView.builder(
+                      : NotificationListener<ScrollEndNotification>(
+                          onNotification: (n) {
+                            if (q.isEmpty && !filter.active && sc.hasClients) {
+                              Resume.setInt(_key, (sc.offset / rowH).round());
+                            }
+                            return false;
+                          },
+                          child: ListView.builder(
                           controller: sc,
                           itemExtent: rowH,
                           cacheExtent: 400,
@@ -294,7 +315,7 @@ class _VocabPageState extends State<VocabPage> {
                           padding: const EdgeInsets.only(bottom: 90),
                           itemCount: words.length,
                           itemBuilder: (c, i) => card(words[i], i),
-                        ),
+                        )),
             ),
           ],
         ),

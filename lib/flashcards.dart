@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'filters.dart';
 import 'flipcard.dart';
 import 'style.dart';
+import 'resume.dart';
 import 'vocab.dart';
 import 'word_editor.dart';
 import 'wordimg.dart';
@@ -35,12 +36,25 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
   Future<void> load() async {
     final r = await Db.search('');
+    final last = await Resume.getInt('flash');
     if (!mounted) return;
+    var start = 0;
+    final ws = applyFilter(r, filter);
+    if (last != null) {
+      final k = ws.indexWhere((w) => w.id == last);
+      if (k > 0) start = k;
+    }
     setState(() {
       all = r;
-      words = applyFilter(r, filter);
+      words = ws;
       loading = false;
+      index = start;
     });
+    if (start > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (pc.hasClients) pc.jumpToPage(start);
+      });
+    }
   }
 
   void refilter() {
@@ -251,6 +265,8 @@ class _FlashcardPageState extends State<FlashcardPage> {
                 onPageChanged: (i) {
                   setState(() => index = i);
                   prefetch(i);
+                  final id = words[i].id;
+                  if (id != null) Resume.setInt('flash', id);
                 },
                 itemBuilder: (context, i) => page(i),
               ),

@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'words_data.dart';
 import 'quiz_stats.dart';
+import 'resume.dart';
 class QuizPage extends StatefulWidget {
   const QuizPage({super.key});
   @override
@@ -23,6 +25,53 @@ class _QuizPageState extends State<QuizPage> {
   String? _picked;
   bool? _mode; // true = কোরিয়ান থেকে বাংলা, false = বাংলা থেকে কোরিয়ান
   bool _done = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _restore();
+  }
+
+  // কুইজ ছেড়ে গেলে আবার সেখান থেকেই চালু হয়
+  void _save() {
+    if (_mode == null) {
+      Resume.setStr('quiz', '');
+      return;
+    }
+    Resume.setStr(
+        'quiz',
+        jsonEncode({
+          'qs': [
+            for (final x in _qs) [x.question, x.answer, x.options]
+          ],
+          'i': _i,
+          'score': _score,
+          'picked': _picked,
+          'mode': _mode,
+          'done': _done,
+        }));
+  }
+
+  Future<void> _restore() async {
+    final s = await Resume.getStr('quiz');
+    if (s == null || s.isEmpty) return;
+    try {
+      final m = jsonDecode(s) as Map;
+      final qs = <_Q>[
+        for (final e in (m['qs'] as List))
+          _Q('${e[0]}', '${e[1]}', List<String>.from(e[2] as List))
+      ];
+      if (qs.isEmpty || !mounted) return;
+      setState(() {
+        _qs = qs;
+        _i = (m['i'] as int).clamp(0, qs.length - 1).toInt();
+        _score = m['score'] as int;
+        _picked = m['picked'] as String?;
+        _mode = m['mode'] as bool?;
+        _done = m['done'] == true;
+      });
+    } catch (_) {}
+  }
 
   List<List<String>> _words() {
     return (allWords as List)
@@ -57,6 +106,7 @@ class _QuizPageState extends State<QuizPage> {
       _mode = kor;
       _done = false;
     });
+    _save();
   }
 
   void _pick(String o) {
@@ -65,6 +115,7 @@ class _QuizPageState extends State<QuizPage> {
       _picked = o;
       if (o == _qs[_i].answer) _score++;
     });
+    _save();
   }
 
   void _next() {
@@ -77,6 +128,7 @@ class _QuizPageState extends State<QuizPage> {
         _picked = null;
       }
     });
+    _save();
   }
 
   Widget _menu() {
@@ -142,10 +194,13 @@ class _QuizPageState extends State<QuizPage> {
               width: double.infinity,
               height: 52,
               child: OutlinedButton(
-                onPressed: () => setState(() {
-                  _mode = null;
-                  _done = false;
-                }),
+                onPressed: () {
+                  setState(() {
+                    _mode = null;
+                    _done = false;
+                  });
+                  _save();
+                },
                 child: const Text('মোড বদলান', style: TextStyle(fontSize: 18)),
               ),
             ),

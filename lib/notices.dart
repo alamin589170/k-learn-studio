@@ -11,23 +11,30 @@ class Notice {
   const Notice(this.title, this.url);
 }
 
-// BOESL (boesl.gov.bd) এর সর্বশেষ নোটিশ। ইন্টারনেট থাকলে আনে, ফোনে জমা রাখে,
-// অফলাইনে জমা থাকা নোটিশ দেখায়। বারবার আনে না: কমপক্ষে ২ ঘণ্টা পরপর।
+class NewsSource {
+  final String key, label, url;
+  const NewsSource(this.key, this.label, this.url);
+}
+
+// BOESL (boesl.gov.bd) এর দুটি তালিকা। ইন্টারনেট থাকলে আনে, ফোনে জমা রাখে,
+// অফলাইনে জমা থাকা তালিকা দেখায়। কমপক্ষে ২ ঘণ্টা পরপর আনে।
 class BoeslNotices {
   static const String home = 'https://boesl.gov.bd/';
-  static const List<String> _pages = [
-    'https://boesl.gov.bd/site/view/notices',
-    'https://boesl.gov.bd/',
+  static const List<NewsSource> sources = [
+    NewsSource('latest', 'সর্বশেষ খবর', 'https://boesl.gov.bd/views/latest-news'),
+    NewsSource('news', 'নিউজ ও নোটিশ', 'https://boesl.gov.bd/pages/news/'),
   ];
   static const Duration _every = Duration(hours: 2);
-  static final ValueNotifier<List<Notice>> items = ValueNotifier(const []);
+  static final Map<String, ValueNotifier<List<Notice>>> lists = {
+    for (final s in sources) s.key: ValueNotifier<List<Notice>>(const [])
+  };
   static bool _loadedCache = false;
   static bool _busy = false;
   static DateTime? _lastTry;
 
   static Future<File> _file() async {
     final d = await getApplicationDocumentsDirectory();
-    return File('${d.path}/boesl_notices.json');
+    return File('${d.path}/boesl_notices2.json');
   }
 
   static Future<void> _readCache() async {
@@ -37,10 +44,15 @@ class BoeslNotices {
       final f = await _file();
       if (!await f.exists()) return;
       final m = jsonDecode(await f.readAsString()) as Map;
-      final l = (m['items'] as List)
-          .map((e) => Notice('${(e as Map)['t']}', '${e['u']}'))
-          .toList();
-      if (l.isNotEmpty) items.value = l;
+      for (final s in sources) {
+        final raw = m[s.key];
+        if (raw is List) {
+          final l = raw
+              .map((e) => Notice('${(e as Map)['t']}', '${e['u']}'))
+              .toList();
+          if (l.isNotEmpty) lists[s.key]!.value = l;
+        }
+      }
       final ts = int.tryParse('${m['ts']}');
       if (ts != null) _lastTry = DateTime.fromMillisecondsSinceEpoch(ts);
     } catch (_) {}
@@ -53,26 +65,62 @@ class BoeslNotices {
     if (!force && lt != null && DateTime.now().difference(lt) < _every) return;
     _busy = true;
     try {
-      for (final p in _pages) {
-        final l = await _fetch(p);
-        if (l.length >= 2) {
-          items.value = l;
-          final f = await _file();
-          await f.writeAsString(jsonEncode({
-            'ts': DateTime.now().millisecondsSinceEpoch,
-            'items': [
-              for (final n in l) {'t': n.title, 'u': n.url}
-            ],
-          }));
-          _lastTry = DateTime.now();
-          break;
+      var any = false;
+      for (final s in sources) {
+        final l = await _fetch(s.url);
+        if (l.isNotEmpty) {
+          lists[s.key]!.value = l;
+          any = true;
         }
+      }
+      if (any) {
+        final f = await _file();
+        await f.writeAsString(jsonEncode({
+          'ts': DateTime.now().millisecondsSinceEpoch,
+          for (final s in sources)
+            s.key: [
+              for (final n in lists[s.key]!.value) {'t': n.title, 'u': n.url}
+            ],
+        }));
+        _lastTry = DateTime.now();
       }
     } catch (_) {
     } finally {
       _busy = false;
     }
   }
+
+  // সেটিংসের "নোটিশ পরীক্ষা" বাটনের জন্য: কী আসছে তার রিপোর্ট
+  static Future<String> diagnose() async {
+    final b = StringBuffer();
+    for (final s in sources) {
+      b.writeln('● ${s.label}\n${s.url}');
+      try {
+        final r = await http.get(Uri.parse(s.url), headers: _headers)
+            .timeout(const Duration(seconds: 15));
+        final body = utf8.decode(r.bodyBytes, allowMalformed: true);
+        final l = parse(body, Uri.parse(s.url));
+        b.writeln('স্ট্যাটাস ${r.statusCode}, আকার ${body.length}, পাওয়া ${l.length}টি');
+        for (final n in l.take(3)) {
+          b.writeln('  - ${n.title}');
+        }
+        if (l.isEmpty) {
+          final t = body.replaceAll(RegExp(r'\s+'), ' ');
+          b.writeln('শুরুর অংশ: ${t.substring(0, t.length > 350 ? 350 : t.length)}');
+        }
+      } catch (e) {
+        b.writeln('ব্যর্থ: $e');
+      }
+      b.writeln();
+    }
+    return b.toString();
+  }
+
+  static const Map<String, String> _headers = {
+    'User-Agent':
+        'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36',
+    'Accept-Language': 'bn,en;q=0.8',
+  };
 
   static String _clean(String s) {
     var t = s.replaceAll(RegExp(r'<[^>]*>'), ' ');
@@ -90,168 +138,232 @@ class BoeslNotices {
     return t.replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
+  static const Set<String> _skip = {
+    'সকল', 'সব', 'বিস্তারিত', 'আরও', 'আরো', 'সকল নোটিশ দেখুন', 'হোম', 'Home',
+    'আরও দেখুন', 'বিস্তারিত দেখুন', 'Read More', 'more',
+  };
+
+  static void _walk(dynamic d, Uri base, List<Notice> out) {
+    if (d is List) {
+      for (final e in d) {
+        _walk(e, base, out);
+      }
+    } else if (d is Map) {
+      String? title;
+      String? link;
+      for (final k in const ['title', 'subject', 'heading', 'name', 'title_bn']) {
+        final v = d[k];
+        if (v is String && v.trim().length > 6) {
+          title = _clean(v);
+          break;
+        }
+      }
+      for (final k in const ['url', 'link', 'href', 'file', 'slug']) {
+        final v = d[k];
+        if (v is String && v.isNotEmpty) {
+          link = v;
+          break;
+        }
+      }
+      if (title != null) {
+        out.add(Notice(title, base.resolve(link ?? base.toString()).toString()));
+      }
+      for (final v in d.values) {
+        if (v is List || v is Map) _walk(v, base, out);
+      }
+    }
+  }
+
+  static List<Notice> parse(String body, Uri base) {
+    final out = <Notice>[];
+    final tb = body.trimLeft();
+    if (tb.startsWith('{') || tb.startsWith('[')) {
+      try {
+        _walk(jsonDecode(tb), base, out);
+      } catch (_) {}
+      if (out.isNotEmpty) return _dedupe(out);
+    }
+    final re = RegExp(r'<a\b[^>]*?href\s*=\s*["\x27]([^"\x27]+)["\x27][^>]*>(.*?)</a>',
+        caseSensitive: false, dotAll: true);
+    final all = <Notice>[];
+    final likely = <Notice>[];
+    for (final m in re.allMatches(body)) {
+      final href = m.group(1)!.trim();
+      if (href.startsWith('#') ||
+          href.startsWith('javascript') ||
+          href.startsWith('mailto') ||
+          href.startsWith('tel')) {
+        continue;
+      }
+      final t = _clean(m.group(2)!);
+      if (t.length < 12 || _skip.contains(t)) continue;
+      final n = Notice(t, base.resolve(href).toString());
+      all.add(n);
+      if (RegExp(r'news|notice|detail|view|id=|/\d{2,}', caseSensitive: false)
+          .hasMatch(href)) {
+        likely.add(n);
+      }
+    }
+    var res = likely.length >= 3 ? likely : all;
+    if (res.isEmpty) {
+      final li = RegExp(r'<li\b[^>]*>(.*?)</li>', caseSensitive: false, dotAll: true);
+      for (final m in li.allMatches(body)) {
+        final t = _clean(m.group(1)!);
+        if (t.length >= 15 && !_skip.contains(t)) res.add(Notice(t, base.toString()));
+      }
+    }
+    return _dedupe(res);
+  }
+
+  static List<Notice> _dedupe(List<Notice> l) {
+    final seen = <String>{};
+    final out = <Notice>[];
+    for (final n in l) {
+      if (!seen.add(n.title)) continue;
+      out.add(n);
+      if (out.length >= 20) break;
+    }
+    return out;
+  }
+
   static Future<List<Notice>> _fetch(String page) async {
     try {
-      final r = await http.get(Uri.parse(page), headers: {
-        'User-Agent': 'Mozilla/5.0 (Android) KLearnStudio',
-        'Accept-Language': 'bn,en;q=0.8',
-      }).timeout(const Duration(seconds: 15));
+      final r = await http
+          .get(Uri.parse(page), headers: _headers)
+          .timeout(const Duration(seconds: 15));
       if (r.statusCode != 200) return const [];
-      final body = utf8.decode(r.bodyBytes, allowMalformed: true);
-      final base = Uri.parse(page);
-      final re = RegExp(r'<a\b[^>]*?href\s*=\s*"([^"]+)"[^>]*>(.*?)</a>',
-          caseSensitive: false, dotAll: true);
-      final seen = <String>{};
-      final out = <Notice>[];
-      for (final m in re.allMatches(body)) {
-        final href = m.group(1)!.trim();
-        if (!RegExp(r'/(site/)?notice', caseSensitive: false).hasMatch(href)) {
-          continue;
-        }
-        if (href.contains('view/notices') || href.endsWith('/notices')) continue;
-        final t = _clean(m.group(2)!);
-        if (t.length < 8 || t == 'সকল' || t == 'বিস্তারিত') continue;
-        final u = base.resolve(href).toString();
-        if (!seen.add(u)) continue;
-        out.add(Notice(t, u));
-        if (out.length >= 15) break;
-      }
-      return out;
+      return parse(utf8.decode(r.bodyBytes, allowMalformed: true), Uri.parse(page));
     } catch (_) {
       return const [];
     }
   }
 }
 
-// এক লাইনের চলমান নোটিশ: একটি করে নোটিশ ডান থেকে বাঁয়ে সরে যায়, চাপলে মূল নোটিশ খোলে
-class NoticeTicker extends StatefulWidget {
-  const NoticeTicker({super.key});
+// ছোট বাক্স: এক লাইন করে নোটিশ নিচ থেকে ওপরে সরতে থাকে (ওয়েবসাইটের মতো)
+class NewsBox extends StatefulWidget {
+  final NewsSource source;
+  final Color accent;
+  const NewsBox({super.key, required this.source, required this.accent});
   @override
-  State<NoticeTicker> createState() => _NoticeTickerState();
+  State<NewsBox> createState() => _NewsBoxState();
 }
 
-class _NoticeTickerState extends State<NoticeTicker>
-    with SingleTickerProviderStateMixin {
+class _NewsBoxState extends State<NewsBox> with SingleTickerProviderStateMixin {
+  static const double rowH = 28;
+  static const int visible = 3;
   late final AnimationController c =
-      AnimationController(vsync: this, duration: const Duration(seconds: 12));
-  int idx = 0;
-  double boxW = 0, textW = 0;
-  String shownKey = '';
-
-  static const TextStyle _st =
-      TextStyle(fontSize: 14, fontWeight: FontWeight.w600);
+      AnimationController(vsync: this, duration: const Duration(seconds: 10));
+  late final ValueNotifier<List<Notice>> data = BoeslNotices.lists[widget.source.key]!;
 
   @override
   void initState() {
     super.initState();
-    c.addStatusListener((s) {
-      if (s == AnimationStatus.completed && mounted) {
-        final n = BoeslNotices.items.value.length;
-        if (n <= 1) {
-          c.forward(from: 0);
-        } else {
-          setState(() => idx = (idx + 1) % n);
-        }
-      }
-    });
-    BoeslNotices.items.addListener(_changed);
+    data.addListener(_changed);
     BoeslNotices.ensure();
+    _changed();
   }
 
   void _changed() {
-    if (mounted) setState(() => idx = 0);
+    if (!mounted) return;
+    final n = data.value.length;
+    c.stop();
+    if (n > visible) {
+      c.duration = Duration(milliseconds: n * 2400);
+      c.repeat();
+    }
+    setState(() {});
   }
 
   @override
   void dispose() {
-    BoeslNotices.items.removeListener(_changed);
+    data.removeListener(_changed);
     c.dispose();
     super.dispose();
   }
 
-  Notice get cur {
-    final l = BoeslNotices.items.value;
-    if (l.isEmpty) {
-      return const Notice(
-          'BOESL-এর সর্বশেষ নোটিশ দেখতে এখানে চাপুন', BoeslNotices.home);
-    }
-    return l[idx % l.length];
-  }
-
-  void _restart(double w) {
-    final n = cur;
-    final tp = TextPainter(
-        text: TextSpan(text: n.title, style: _st),
-        maxLines: 1,
-        textDirection: TextDirection.ltr)
-      ..layout();
-    textW = tp.width;
-    boxW = w;
-    final secs = ((w + textW) / 55).clamp(6, 40).toDouble();
-    c.duration = Duration(milliseconds: (secs * 1000).round());
-    c.forward(from: 0);
-  }
-
-  Future<void> open() async {
+  Future<void> open(String u) async {
     try {
-      await launchUrl(Uri.parse(cur.url), mode: LaunchMode.externalApplication);
+      await launchUrl(Uri.parse(u), mode: LaunchMode.externalApplication);
     } catch (_) {}
+  }
+
+  Widget row(Notice n) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => open(n.url),
+      child: SizedBox(
+        height: rowH,
+        child: Row(
+          children: [
+            Icon(Icons.check_circle, size: 16, color: widget.accent),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(n.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 14)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final pr = Theme.of(context).colorScheme.primary;
-    final n = cur;
-    return GestureDetector(
-      onTap: open,
-      child: Container(
-        height: 44,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: pr.withOpacity(0.55)),
-          color: Colors.white.withOpacity(0.06),
+    final l = data.value;
+    final h = rowH * visible;
+    Widget body;
+    if (l.isEmpty) {
+      body = row(Notice('লোড হচ্ছে… (ইন্টারনেট চালু রাখুন) — সাইট খুলতে চাপুন',
+          widget.source.url));
+    } else if (l.length <= visible) {
+      body = Column(children: [for (final n in l) row(n)]);
+    } else {
+      final total = rowH * l.length;
+      body = AnimatedBuilder(
+        animation: c,
+        builder: (context, _) => OverflowBox(
+          alignment: Alignment.topLeft,
+          minHeight: 0,
+          maxHeight: double.infinity,
+          child: Transform.translate(
+            offset: Offset(0, -c.value * total),
+            child: Column(children: [for (final n in [...l, ...l]) row(n)]),
+          ),
         ),
-        child: Row(
-          children: [
-            Icon(Icons.campaign_rounded, color: pr, size: 22),
-            const SizedBox(width: 8),
-            Expanded(
-              child: LayoutBuilder(
-                builder: (ctx, box) {
-                  final key = '${n.url}|${box.maxWidth.round()}';
-                  if (key != shownKey) {
-                    shownKey = key;
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) _restart(box.maxWidth);
-                    });
-                  }
-                  return ClipRect(
-                    child: AnimatedBuilder(
-                      animation: c,
-                      builder: (context, _) {
-                        final x = box.maxWidth -
-                            (box.maxWidth + textW) * c.value;
-                        return OverflowBox(
-                          alignment: Alignment.centerLeft,
-                          minWidth: 0,
-                          maxWidth: double.infinity,
-                          child: Transform.translate(
-                            offset: Offset(x, 0),
-                            child: Text(n.title,
-                                maxLines: 1,
-                                softWrap: false,
-                                style: _st.copyWith(color: Theme.of(context).colorScheme.onSurface)),
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                },
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 8, 10, 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: widget.accent.withOpacity(0.55)),
+        color: widget.accent.withOpacity(0.08),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.campaign_rounded, size: 18, color: widget.accent),
+              const SizedBox(width: 6),
+              Text(widget.source.label,
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: widget.accent)),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => open(widget.source.url),
+                child: Text('সকল ›',
+                    style: TextStyle(fontSize: 12, color: softText(context))),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          SizedBox(height: h, child: ClipRect(child: body)),
+        ],
       ),
     );
   }

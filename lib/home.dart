@@ -63,13 +63,21 @@ class _HomePageState extends State<HomePage> {
                       color: on, fontSize: 34, fontWeight: FontWeight.bold)),
             ),
             Padding(
-              padding: const EdgeInsets.only(left: 10, top: 4, bottom: 18),
+              padding: const EdgeInsets.only(left: 10, top: 4, bottom: 14),
               child: Text('বাংলা থেকে কোরিয়ান, সহজে শিখুন',
                   style: TextStyle(color: softText(context), fontSize: 16)),
             ),
-            const Padding(
-              padding: EdgeInsets.only(left: 6),
-              child: NoticeTicker(),
+            Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: Column(
+                children: [
+                  for (final f in BoeslNotices.feeds)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: NoticeBox(feed: f),
+                    ),
+                ],
+              ),
             ),
           ],
         ),

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'style.dart';
+import 'devsync.dart';
 import 'vocab.dart';
 import 'wordimg.dart';
 
@@ -115,7 +116,9 @@ class _WordEditorState extends State<_WordEditor> {
       setState(() => error = 'কোরিয়ান শব্দ ও বাংলা অর্থ দিতে হবে');
       return;
     }
+    final messenger = ScaffoldMessenger.of(context);
     final old = widget.word;
+    final oldKo = old?.ko ?? '';
     int? id = old?.id;
     var meaningChanged = false;
     if (old == null) {
@@ -149,6 +152,11 @@ class _WordEditorState extends State<_WordEditor> {
       }
     }
     if (mounted) Navigator.pop(context, true);
+    // ডেভেলপার মোড চালু থাকলে সবার জন্য সার্ভারে জমা
+    final saved = old ??
+        Word(ko: k, pron: pron.text.trim(), bn: b, en: en.text.trim(), ex: ex.text.trim());
+    final msg = await DevSync.pushWord(oldKo: oldKo, w: saved, isNew: old == null);
+    if (msg.isNotEmpty) messenger.showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override

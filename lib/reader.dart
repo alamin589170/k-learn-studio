@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdfrx/pdfrx.dart' as pdf;
+import 'resume.dart';
 import 'style.dart';
 
 class PickedPdf {
@@ -50,10 +51,29 @@ class PdfReaderPage extends StatefulWidget {
 
 class _PdfReaderPageState extends State<PdfReaderPage> {
   final pdf.PdfViewerController ctrl = pdf.PdfViewerController();
+  int lastSaved = 0;
+  String get _key => 'pdf_${(widget.path ?? widget.url ?? widget.title).hashCode}';
+
+  void _track() {
+    try {
+      final n = ctrl.pageNumber;
+      if (n != null && n != lastSaved && n > 0) {
+        lastSaved = n;
+        Resume.setInt(_key, n);
+      }
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    ctrl.removeListener(_track);
+    super.dispose();
+  }
 
   @override
   void initState() {
     super.initState();
+    ctrl.addListener(_track);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -94,9 +114,15 @@ class _PdfReaderPageState extends State<PdfReaderPage> {
 
   Widget viewer() {
     final params = pdf.PdfViewerParams(
-      onViewerReady: (doc, c) {
+      onViewerReady: (doc, c) async {
         if (widget.startPage > 1) {
           c.goToPage(pageNumber: widget.startPage);
+          return;
+        }
+        final last = await Resume.getInt(_key);
+        if (last != null && last > 1) {
+          lastSaved = last;
+          c.goToPage(pageNumber: last);
         }
       },
     );
