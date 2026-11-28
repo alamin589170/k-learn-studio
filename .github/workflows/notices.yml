@@ -1,0 +1,105 @@
+name: Update BOESL notices
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install browser
+        run: |
+          npm init -y > /dev/null
+          npm install playwright@1.49.1
+          npx playwright install --with-deps chromium
+
+      - name: Read BOESL pages
+        run: |
+          cat > boesl_fetch.js <<'EOF'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          const pages = [
+            ['news', 'https://boesl.gov.bd/pages/news/'],
+            ['board', 'https://boesl.gov.bd/views/latest-news'],
+          ];
+          (async () => {
+            const browser = await chromium.launch();
+            const ctx = await browser.newContext({
+              locale: 'bn-BD',
+              userAgent: 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36',
+            });
+            const out = { updated: new Date().toISOString(), boxes: {} };
+            const debug = {};
+            for (const [key, url] of pages) {
+              const page = await ctx.newPage();
+              try {
+                await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
+                await page.waitForTimeout(3000);
+                const res = await page.evaluate(() => {
+                  const skip = new Set(['সকল', 'সব', 'বিস্তারিত', 'আরও', 'আরো', 'সকল নোটিশ দেখুন', 'হোম', 'আরও দেখুন', 'বিস্তারিত দেখুন']);
+                  const items = [];
+                  const loose = [];
+                  const all = [];
+                  for (const a of document.querySelectorAll('a[href]')) {
+                    const t = (a.innerText || a.textContent || '').replace(/\s+/g, ' ').trim();
+                    const h = a.href;
+                    if (!t || h.startsWith('javascript') || h.endsWith('#')) continue;
+                    const bad = !!a.closest('nav, header, footer, aside, [class*="menu"], [class*="nav"], [id*="menu"], [id*="nav"], [class*="footer"], [class*="breadcrumb"]');
+                    all.push({ t: t.slice(0, 80), h, bad });
+                    if (t.length < 12 || skip.has(t)) continue;
+                    loose.push({ t, u: h });
+                    if (!bad) items.push({ t, u: h });
+                  }
+                  return {
+                    items: items.length ? items : loose,
+                    all: all.slice(0, 80),
+                    title: document.title,
+                    body: document.body.innerText.slice(0, 1500),
+                  };
+                });
+                const seen = new Set();
+                const list = [];
+                for (const i of res.items) {
+                  if (seen.has(i.t)) continue;
+                  seen.add(i.t);
+                  list.push(i);
+                  if (list.length >= 20) break;
+                }
+                out.boxes[key] = list;
+                debug[key] = { url, title: res.title, count: list.length, sample: res.all, body: res.body };
+              } catch (e) {
+                out.boxes[key] = [];
+                debug[key] = { url, error: String(e) };
+              }
+              await page.close();
+            }
+            await browser.close();
+            fs.mkdirSync('data', { recursive: true });
+            let old = {};
+            try { old = JSON.parse(fs.readFileSync('data/notices.json', 'utf8')); } catch (e) {}
+            for (const k of Object.keys(out.boxes)) {
+              if (!out.boxes[k].length && old.boxes && old.boxes[k]) out.boxes[k] = old.boxes[k];
+            }
+            fs.writeFileSync('data/notices.json', JSON.stringify(out, null, 1));
+            fs.writeFileSync('data/boesl_debug.json', JSON.stringify(debug, null, 1));
+          })();
+          EOF
+          node boesl_fetch.js
+
+      - name: Save
+        run: |
+          git config user.name "notice-bot"
+          git config user.email "notice-bot@users.noreply.github.com"
+          git add data/notices.json data/boesl_debug.json
+          git diff --cached --quiet || (git commit -m "Update BOESL notices [skip ci]" && git push)
