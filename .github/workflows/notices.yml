@@ -4,9 +4,6 @@ on:
   schedule:
     - cron: '*/30 * * * *'
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/notices.yml'
 
 permissions:
   contents: write
@@ -60,7 +57,7 @@ jobs:
                     if (!t || h.startsWith('javascript') || h.endsWith('#')) continue;
                     const bad = !!a.closest('nav, header, footer, aside, [class*="menu"], [class*="nav"], [id*="menu"], [id*="nav"], [class*="footer"], [class*="breadcrumb"]');
                     all.push({ t: t.slice(0, 80), h, bad });
-                    if (/স্ক্রিন\s*রিডার|screen\s*reader|nvda|nvaccess/i.test(t + ' ' + h) || /\.(exe|apk|zip|msi|dmg)(\?|$)/i.test(h)) continue;
+                    if (/স্ক্রিন\s*রিডার|screen\s*reader|nvda|nvaccess/i.test(t + ' ' + h) || /\.(exe|apk|zip|msi|dmg)(\?|$)/i.test(h) || !/boesl\.gov\.bd/.test(new URL(h).hostname)) continue;
                     if (t.length < 12 || skip.has(t)) continue;
                     loose.push({ t, u: h });
                     if (!bad) items.push({ t, u: h });
@@ -93,7 +90,7 @@ jobs:
             let old = {};
             try { old = JSON.parse(fs.readFileSync('data/notices.json', 'utf8')); } catch (e) {}
             for (const k of Object.keys(out.boxes)) {
-              if (!out.boxes[k].length && old.boxes && old.boxes[k]) out.boxes[k] = old.boxes[k].filter(i => !/স্ক্রিন\s*রিডার|screen\s*reader|nvda|nvaccess/i.test(i.t + ' ' + i.u) && !/\.(exe|apk|zip|msi|dmg)(\?|$)/i.test(i.u));
+              if (!out.boxes[k].length && old.boxes && old.boxes[k]) out.boxes[k] = old.boxes[k];
             }
             fs.writeFileSync('data/notices.json', JSON.stringify(out, null, 1));
             fs.writeFileSync('data/boesl_debug.json', JSON.stringify(debug, null, 1));
