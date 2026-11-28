@@ -1,0 +1,548 @@
+{
+ "news": {
+  "url": "https://boesl.gov.bd/pages/news/",
+  "title": "খবর | বাংলাদেশ ওভারসিজ এমপ্লয়মেন্ট অ্যান্ড সার্ভিসেস লিঃ (বোয়েসেল)",
+  "count": 3,
+  "sample": [
+   {
+    "t": "কন্টেন্টে চলে যান",
+    "h": "https://boesl.gov.bd/pages/news/#main-content",
+    "bad": true
+   },
+   {
+    "t": "এক্সেসিবিলিটি মেনুতে যান",
+    "h": "https://boesl.gov.bd/pages/news/#accessibility-card-title",
+    "bad": true
+   },
+   {
+    "t": "বাংলাদেশ জাতীয় তথ্য বাতায়ন",
+    "h": "http://bangladesh.gov.bd/",
+    "bad": false
+   },
+   {
+    "t": "বাংলাদেশ ওভারসিজ এমপ্লয়মেন্ট অ্যান্ড সার্ভিসেস লিঃ (বোয়েসেল)",
+    "h": "https://boesl.gov.bd/",
+    "bad": false
+   },
+   {
+    "t": "বোয়েসেলে স্বাগতম",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922e0be933eb65569e286af",
+    "bad": true
+   },
+   {
+    "t": "ভিশন",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922dc61933eb65569e10092",
+    "bad": true
+   },
+   {
+    "t": "মিশন",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922df68933eb65569e21c7f",
+    "bad": true
+   },
+   {
+    "t": "কার্যক্রম",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922df45933eb65569e20fc1",
+    "bad": true
+   },
+   {
+    "t": "সাংগাঠনিক কাঠামো",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922dcf7933eb65569e12f5e",
+    "bad": true
+   },
+   {
+    "t": "প্রতিষ্ঠানের প্রফাইল",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922dba7933eb65569e0b98d",
+    "bad": true
+   },
+   {
+    "t": "পরিচালনা পর্ষদ",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922de80933eb65569e1b13b",
+    "bad": true
+   },
+   {
+    "t": "কর্মকর্তা/ কর্মচারীবৃন্দ",
+    "h": "https://boesl.gov.bd/pages/officers",
+    "bad": true
+   },
+   {
+    "t": "কর্মকর্তা/ কর্মচারীবৃন্দের দপ্তর ভিত্তিক তালিকা।",
+    "h": "https://boesl.gov.bd/pages/officers",
+    "bad": true
+   },
+   {
+    "t": "বৈদেশিক নিয়োগ",
+    "h": "https://boesl.gov.bd/pages/news/",
+    "bad": true
+   },
+   {
+    "t": "বৈদেশিক নিয়োগ প্রক্রিয়া",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922df1b933eb65569e1fe54",
+    "bad": true
+   },
+   {
+    "t": "সার্ভিস চার্জ",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922db6a933eb65569e0a043",
+    "bad": true
+   },
+   {
+    "t": "দক্ষিণ কোরিয়ার সার্ভিস চার্জ ফেরত ফর্ম",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922e0e4933eb65569e290bd",
+    "bad": true
+   },
+   {
+    "t": "প্রতিবেদন ও প্রকাশনা",
+    "h": "https://boesl.gov.bd/pages/news/",
+    "bad": true
+   },
+   {
+    "t": "বার্ষিক প্রতিবেদন ২০২৩",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922de26933eb65569e18939",
+    "bad": true
+   },
+   {
+    "t": "বার্ষিক প্রতিবেদন ২০২২",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922e018933eb65569e25708",
+    "bad": true
+   },
+   {
+    "t": "বার্ষিক প্রতিবেদন ২০২১",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922db57933eb65569e09824",
+    "bad": true
+   },
+   {
+    "t": "বার্ষিক প্রতিবেদন-২০২০",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922df89933eb65569e22a12",
+    "bad": true
+   },
+   {
+    "t": "বার্ষিক প্রতিবেদন-২০১৯",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922de62933eb65569e1a446",
+    "bad": true
+   },
+   {
+    "t": "বার্ষিক প্রতিবেদন ২০১৮-২০১৯",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922dec6933eb65569e1d46a",
+    "bad": true
+   },
+   {
+    "t": "অডিট রিপোর্ট ২০২৪-২০২৫",
+    "h": "https://boesl.gov.bd/pages/static-pages/boesl-audit-report-2024-2025-wui109-699a7e203d7313fa0e6492de",
+    "bad": true
+   },
+   {
+    "t": "অডিট রিপোর্ট ২০২৩-২০২৪",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922dce0933eb65569e1282e",
+    "bad": true
+   },
+   {
+    "t": "অডিট রিপোর্ট ২০২০-২০২১",
+    "h": "https://boesl.gov.bd/pages/publications/6922daa181fc96cef9eb6c05",
+    "bad": true
+   },
+   {
+    "t": "অডিট রিপোর্ট ২০২১-২০২২",
+    "h": "https://boesl.gov.bd/pages/publications/6922d9ef81fc96cef9eb46af",
+    "bad": true
+   },
+   {
+    "t": "বার্ষিক প্রতিবেদন ২০২৫",
+    "h": "https://boesl.gov.bd/pages/static-pages/6a5df8831f8fc97be14dd212",
+    "bad": true
+   },
+   {
+    "t": "বার্ষিক প্রতিবেদন ২০২৪",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922dec3933eb65569e1d2ee",
+    "bad": true
+   },
+   {
+    "t": "গ্যালারি",
+    "h": "https://boesl.gov.bd/pages/news/",
+    "bad": true
+   },
+   {
+    "t": "ফটো গ্যালারি",
+    "h": "https://boesl.gov.bd/pages/photo-galleries",
+    "bad": true
+   },
+   {
+    "t": "ভিডিও গ্যালারি",
+    "h": "https://www.youtube.com/@BOESLOfficial",
+    "bad": true
+   },
+   {
+    "t": "সকল আদেশ",
+    "h": "https://boesl.gov.bd/pages/go-ultimates?filters=%7B%22order%22%3A%20%226922d2bf81fc96cef9e9a459%22%7D",
+    "bad": true
+   },
+   {
+    "t": "যোগাযোগের ঠিকানা",
+    "h": "http://www.boesl.org.bd/ContactUs.aspx",
+    "bad": true
+   },
+   {
+    "t": "অফিসের ঠিকানা",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922dcac933eb65569e1184f",
+    "bad": true
+   },
+   {
+    "t": "দেখুন",
+    "h": "https://boesl.gov.bd/pages/news/%E0%A6%B8%E0%A6%B0%E0%A6%95%E0%A6%BE%E0%A6%B0%E0%A6%BF%E0%A6%AD%E0%A6%BE%E0%A6%AC%E0%A7%87-%E0%A6%9C%E0%A6%B0%E0%A7%8D%E0%A6%A1%E0%A6%BE%E0%A6%A8%E0%A7%87-%E0%A6%A6%E0%A6%95%E0%A7%8D%E0%A6%B7-%E0%A6%95%E0%A6%B0%E0%A7%8D%E0%A6%AE%E0%A7%80-%E0%A6%A8%E0%A6%BF%E0%A7%9F%E0%A7%8B%E0%A6%97-b38a6f-6922f791933eb65569e40cef",
+    "bad": false
+   },
+   {
+    "t": "রেফারেন্স",
+    "h": "https://boesl.gov.bd/pages/reports/6922df90dbfbab28ce06ff13",
+    "bad": false
+   },
+   {
+    "t": "দেখুন",
+    "h": "https://boesl.gov.bd/pages/news/%E0%A6%B8%E0%A6%B0%E0%A6%95%E0%A6%BE%E0%A6%B0%E0%A6%BF%E0%A6%AD%E0%A6%BE%E0%A6%AC%E0%A7%87-%E0%A6%AC%E0%A7%8D%E0%A6%B0%E0%A7%81%E0%A6%A8%E0%A6%BE%E0%A6%87%E0%A7%9F%E0%A7%87%E0%A6%B0-%E0%A6%95%E0%A7%8B%E0%A6%AE%E0%A7%8D%E0%A6%AA%E0%A6%BE%E0%A6%A8%E0%A6%BF%E0%A6%A4%E0%A7%87-%E0%A6%95%E0%A6%B0%E0%A7%8D%E0%A6%AE%E0%A7%80-%E0%A6%A8%E0%A6%BF%E0%A7%9F%E0%A7%8B%E0%A6%97-079823-6922f790933eb65569e40bff",
+    "bad": false
+   },
+   {
+    "t": "রেফারেন্স",
+    "h": "https://boesl.gov.bd/pages/reports/6922dc02dbfbab28ce05cdfa",
+    "bad": false
+   },
+   {
+    "t": "দেখুন",
+    "h": "https://boesl.gov.bd/pages/news/%E0%A6%95%E0%A6%AE%E0%A6%BF%E0%A6%9F%E0%A7%87%E0%A6%A1-%E0%A6%95%E0%A6%B0%E0%A7%8D%E0%A6%AE%E0%A7%80%E0%A6%A6%E0%A7%87%E0%A6%B0-%E0%A6%85%E0%A6%A8%E0%A6%B2%E0%A6%BE%E0%A6%87%E0%A6%A8%E0%A7%87-%E0%A6%8F%E0%A6%B0%E0%A6%BE%E0%A6%87%E0%A6%AD%E0%A6%BE%E0%A6%B2-arrival-%E0%A6%B0%E0%A6%BF%E0%A6%AA%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%9F-%E0%A6%B8%E0%A6%82%E0%A6%95%E0%A7%8D%E0%A6%B0%E0%A6%BE%E0%A6%A8%E0%A7%8D%E0%A6%A4-%E0%A6%A8%E0%A7%8B%E0%A6%9F%E0%A6%BF%E0%A6%B6-bcf9faea-6a94f1f4180aff5b5539c586",
+    "bad": false
+   },
+   {
+    "t": "রেফারেন্স",
+    "h": "https://boesl.gov.bd/pages/reports/6a94f1f4180aff5b5539c584",
+    "bad": false
+   },
+   {
+    "t": "দেখুন",
+    "h": "https://boesl.gov.bd/pages/news/job-offer-received-and-flight-details-for-general-and-special-cbt-under-eps-up-to-25-03-2026-863bbc62-69c65d08cfb39a5db518af84",
+    "bad": false
+   },
+   {
+    "t": "রেফারেন্স",
+    "h": "https://boesl.gov.bd/pages/reports/69c65d08cfb39a5db518af82",
+    "bad": false
+   },
+   {
+    "t": "দেখুন",
+    "h": "https://boesl.gov.bd/pages/news/%E0%A6%95%E0%A6%BE%E0%A6%B0%E0%A6%BF%E0%A6%97%E0%A6%B0%E0%A6%BF-%E0%A6%A4%E0%A7%8D%E0%A6%B0%E0%A7%81%E0%A6%9F%E0%A6%BF%E0%A6%B0-%E0%A6%95%E0%A6%BE%E0%A6%B0%E0%A6%A3%E0%A7%87-brmsboeslgovbd-%E0%A6%85%E0%A6%A8%E0%A6%B2%E0%A6%BE%E0%A6%87%E0%A6%A8-%E0%A6%AA%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%9F%E0%A6%BE%E0%A6%B2%E0%A7%87%E0%A6%B0-%E0%A6%AE%E0%A6%BE%E0%A6%A7%E0%A7%8D%E0%A6%AF%E0%A6%AE%E0%A7%87-%E0%A6%B8%E0%A6%95%E0%A6%B2-%E0%A6%9A%E0%A6%BE%E0%A6%95%E0%A7%81%E0%A6%B0%E0%A6%BF%E0%A6%B0-%E0%A6%86%E0%A6%AC%E0%A7%87%E0%A6%A6%E0%A6%A8-%E0%A6%A6%E0%A6%BE%E0%A6%96%E0%A6%BF%E0%A6%B2-%E0%A6%AC%E0%A6%A8%E0%A7%8D%E0%A6%A7-%E0%A6%86%E0%A6%9B%E0%A7%87-%E0%A6%AA%E0%A6%B0%E0%A6%AC%E0%A6%B0%E0%A7%8D%E0%A6%A4%E0%A7%80-%E0%A6%A8%E0%A6%BF%E0%A6%B0%E0%A7%8D%E0%A6%A6%E0%A7%87%E0%A6%B6%E0%A6%A8%E0%A6%BE%E0%A6%B0-%E0%A6%9C%E0%A6%A8%E0%A7%8D%E0%A6%AF-%E0%A6%AC%E0%A7%8B%E0%A7%9F%E0%A7%87%E0%A6%B8%E0%A7%87%E0%A6%B2-%E0%A6%8F%E0%A6%B0-%E0%A6%A8%E0%A7%8B%E0%A6%9F%E0%A6%BF%E0%A6%B6-%E0%A6%AC%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%A1-%E0%A6%93-%E0%A6%AB%E0%A7%87%E0%A6%87%E0%A6%B8%E0%A6%AC%E0%A7%81%E0%A6%95-%E0%A6%AA%E0%A7%87%E0%A6%87%E0%A6%9C-%E0%A6%AD%E0%A6%BF%E0%A6%9C%E0%A6%BF%E0%A6%9F-%E0%A6%95%E0%A6%B0%E0%A6%BE%E0%A6%B0-%E0%A6%9C%E0%A6%A8%E0%A7%8D%E0%A6%AF-%E0%A6%85%E0%A6%A8%E0%A7%81%E0%A6%B0%E0%A7%8B%E0%A6%A7-%E0%A6%95%E0%A6%B0%E0%A6%BE-%E0%A6%B9%E0%A6%B2%E0%A7%8B-1c19aa7a-6acb6d6c582bde01e1abfe47",
+    "bad": false
+   },
+   {
+    "t": "রেফারেন্স",
+    "h": "https://boesl.gov.bd/pages/reports/6acb6d6c582bde01e1abfe45",
+    "bad": false
+   },
+   {
+    "t": "দেখুন",
+    "h": "https://boesl.gov.bd/pages/news/%E0%A6%AC%E0%A7%8B%E0%A7%9F%E0%A7%87%E0%A6%B8%E0%A7%87%E0%A6%B2%E0%A7%87%E0%A6%B0-%E0%A6%AE%E0%A6%BE%E0%A6%A7%E0%A7%8D%E0%A6%AF%E0%A6%AE%E0%A7%87-%E0%A6%9C%E0%A6%BE%E0%A6%AA%E0%A6%BE%E0%A6%A8%E0%A7%87-%E0%A6%A8%E0%A6%BE%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A6%BF%E0%A6%82-%E0%A6%95%E0%A7%87%E0%A7%9F%E0%A6%BE%E0%A6%B0%E0%A6%97%E0%A6%BF%E0%A6%AD%E0%A6%BE%E0%A6%B0-%E0%A6%AA%E0%A6%A6%E0%A7%87-%E0%A6%A6%E0%A6%95%E0%A7%8D%E0%A6%B7-%E0%A6%AE%E0%A6%B9%E0%A6%BF%E0%A6%B2%E0%A6%BE-%E0%A6%9F%E0%A7%87%E0%A6%95%E0%A6%A8%E0%A6%BF%E0%A6%95%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%B2-%E0%A6%87%E0%A6%A8%E0%A7%8D%E0%A6%9F%E0%A6%BE%E0%A6%B0%E0%A7%8D%E0%A6%A8-%E0%A6%A8%E0%A6%BF%E0%A7%9F%E0%A7%8B%E0%A6%97-%E0%A6%AC%E0%A6%BF%E0%A6%9C%E0%A7%8D%E0%A6%9E%E0%A6%AA%E0%A7%8D%E0%A6%A4%E0%A6%BF-feff3e2b-6a980ce3421c77058d19e4a8",
+    "bad": false
+   },
+   {
+    "t": "রেফারেন্স",
+    "h": "https://boesl.gov.bd/pages/reports/6a980ce3421c77058d19e4a6",
+    "bad": false
+   },
+   {
+    "t": "দেখুন",
+    "h": "https://boesl.gov.bd/pages/news/arrival-report-for-committed-worker-9e6d3cb6-6a94ebbf2adbdef9eaecb95e",
+    "bad": false
+   },
+   {
+    "t": "রেফারেন্স",
+    "h": "https://boesl.gov.bd/pages/reports/6a94ebbf2adbdef9eaecb95c",
+    "bad": false
+   },
+   {
+    "t": "দেখুন",
+    "h": "https://boesl.gov.bd/pages/news/%E0%A6%A6%E0%A6%95%E0%A7%8D%E0%A6%B7%E0%A6%BF%E0%A6%A3-%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A6%BF%E0%A7%9F%E0%A6%BE%E0%A7%9F-%E0%A6%9A%E0%A6%BE%E0%A6%95%E0%A6%B0%E0%A6%BF-%E0%A6%AA%E0%A7%8D%E0%A6%B0%E0%A6%A4%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%B6%E0%A7%80%E0%A6%A6%E0%A7%87%E0%A6%B0-%E0%A7%A8%E0%A7%A6%E0%A7%A8%E0%A7%AD-%E0%A6%B8%E0%A6%BE%E0%A6%B2%E0%A7%87%E0%A6%B0-%E0%A6%B6%E0%A7%87%E0%A6%B7%E0%A6%BE%E0%A6%B0%E0%A7%8D%E0%A6%A7%E0%A7%87-%E0%A6%B0%E0%A7%8B%E0%A6%B8%E0%A7%8D%E0%A6%9F%E0%A6%BE%E0%A6%B0%E0%A6%AD%E0%A7%81%E0%A6%95%E0%A7%8D%E0%A6%A4%E0%A6%BF%E0%A6%B0-%E0%A6%B2%E0%A6%95%E0%A7%8D%E0%A6%B7%E0%A7%8D%E0%A6%AF%E0%A7%87-%E0%A6%86%E0%A6%97%E0%A7%8D%E0%A6%B0%E0%A6%B9%E0%A7%80%E0%A6%A6%E0%A7%87%E0%A6%B0-%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A6%BF%E0%A7%9F%E0%A6%BE%E0%A6%A8-%E0%A6%AD%E0%A6%BE%E0%A6%B7%E0%A6%BE-%E0%A6%AA%E0%A6%B0%E0%A7%80%E0%A6%95%E0%A7%8D%E0%A6%B7%E0%A6%BE%E0%A7%9F-%E0%A6%85%E0%A6%82%E0%A6%B6%E0%A6%97%E0%A7%8D%E0%A6%B0%E0%A6%B9%E0%A6%A3%E0%A7%87-%E0%A6%A8%E0%A6%BF%E0%A6%AC%E0%A6%A8%E0%A7%8D%E0%A6%A7%E0%A6%A8-%E0%A6%93-%E0%A6%AA%E0%A6%B0%E0%A7%80%E0%A6%95%E0%A7%8D%E0%A6%B7%E0%A6%BE%E0%A6%B0-%E0%A6%B8%E0%A6%AE%E0%A7%9F%E0%A6%B8%E0%A7%82%E0%A6%9A%E0%A6%BF-%E0%A6%98%E0%A7%8B%E0%A6%B7%E0%A6%A3%E0%A6%BE-4d3f5349-6a448a0b7f5592e626671000",
+    "bad": false
+   },
+   {
+    "t": "রেফারেন্স",
+    "h": "https://boesl.gov.bd/pages/reports/6a448a0b7f5592e626670ffe",
+    "bad": false
+   },
+   {
+    "t": "দেখুন",
+    "h": "https://boesl.gov.bd/pages/news/%E0%A6%B8%E0%A6%A4%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A7%80%E0%A6%95%E0%A6%B0%E0%A6%A8-%E0%A6%A8%E0%A7%8B%E0%A6%9F%E0%A6%BF%E0%A6%B6-1be752d7-6a3a5ae950a67beec213995a",
+    "bad": false
+   },
+   {
+    "t": "রেফারেন্স",
+    "h": "https://boesl.gov.bd/pages/reports/6a3a5ae950a67beec2139958",
+    "bad": false
+   },
+   {
+    "t": "দেখুন",
+    "h": "https://boesl.gov.bd/pages/news/%E0%A6%A6%E0%A6%95%E0%A7%8D%E0%A6%B7%E0%A6%BF%E0%A6%A3-%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A6%BF%E0%A7%9F%E0%A6%BE%E0%A7%9F-%E0%A6%AC%E0%A6%BF%E0%A6%AD%E0%A6%BF%E0%A6%A8%E0%A7%8D%E0%A6%A8-%E0%A6%95%E0%A6%B2%E0%A7%87%E0%A6%9C%E0%A6%AC%E0%A6%BF%E0%A6%B6%E0%A7%8D%E0%A6%AC%E0%A6%AC%E0%A6%BF%E0%A6%A6%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%B2%E0%A7%9F-%E0%A6%B2%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%99%E0%A7%8D%E0%A6%97%E0%A7%81%E0%A7%9F%E0%A7%87%E0%A6%9C-%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8-%E0%A6%8F%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%B8%E0%A7%8B%E0%A6%B8%E0%A6%BF%E0%A7%9F%E0%A7%87%E0%A6%9F-%E0%A6%85%E0%A6%A8%E0%A6%BE%E0%A6%B0%E0%A7%8D%E0%A6%B8-%E0%A6%93-%E0%A6%AE%E0%A6%BE%E0%A6%B8%E0%A7%8D%E0%A6%9F%E0%A6%BE%E0%A6%B0%E0%A7%8D%E0%A6%B8-%E0%A6%8F-%E0%A6%AD%E0%A6%B0%E0%A7%8D%E0%A6%A4%E0%A6%BF%E0%A6%B0-%E0%A6%AC%E0%A6%BF%E0%A6%9C%E0%A7%8D%E0%A6%9E%E0%A6%AA%E0%A7%8D%E0%A6%A4%E0%A6%BF-%E0%A7%A8%E0%A7%A6%E0%A7%A8%E0%A7%AC-%E0%A6%B8%E0%A7%87%E0%A6%AA%E0%A7%8D%E0%A6%9F%E0%A7%87%E0%A6%AE%E0%A7%8D%E0%A6%AC%E0%A6%B0-%E0%A6%87%E0%A6%A8%E0%A6%9F%E0%A7%87%E0%A6%95-225806b8-6a31291e1c347e8804d5a624",
+    "bad": false
+   },
+   {
+    "t": "রেফারেন্স",
+    "h": "https://boesl.gov.bd/pages/reports/6a31291e1c347e8804d5a622",
+    "bad": false
+   },
+   {
+    "t": "স্ক্রিন রিডার ডাউনলোড করুন",
+    "h": "https://www.nvaccess.org/files/nvda/releases/2020.4/nvda_2020.4.exe",
+    "bad": false
+   },
+   {
+    "t": "অবস্থান",
+    "h": "https://goo.gl/maps/Qu1qvdkD5KZtAzkn6",
+    "bad": true
+   }
+  ],
+  "body": "কন্টেন্টে চলে যান\nএক্সেসিবিলিটি মেনুতে যান\nবাংলাদেশ জাতীয় তথ্য বাতায়ন\nঅফিসের ধরণ নির্বাচন করুন\nস্বায়ত্তশাসিত\nমন্ত্রণালয়\nমন্ত্রণালয় বিভাগ\nঅধিদপ্তর\nকর্পোরেশন\nকমিশন\nকোম্পানি\nকর্তৃপক্ষ/অথরিটি\nএজেন্সী\nকাউন্সিল\nট্রাস্ট\nজাদুঘর\nফাউন্ডেশন\nএকাডেমি\nদপ্তর/সংস্থা\nবোর্ড\nইনস্টিটিউট\nফেডারেশন\nব্যুরো\nএডুকেশন বোর্ড\nব্যাংক / বীমা / আর্থিক প্রতিষ্ঠান\nবিভাগীয় পোর্টাল\nজেলা পোর্টাল\nপৌরসভা পোর্টাল\nউপজেলা পোর্টাল\nইউনিয়ন পোর্টাল\nরেজাল্ট\nপ্রকল্প/কর্মসূচী\nবিদেশী দূতাবাস/মিশন\nজেলা পরিষদ পোর্টাল\nসিটি কর্পোরেশন পোর্টাল\nপ্রশিক্ষণ\nশিক্ষা প্রতিষ্ঠান\nসরকারি মাঠ পর্যায়ের অফিস\nঅন্যান্য\nঅফিস স্তর নির্বাচন করুন\nপ্রধান কার্যালয়\nআঞ্চলিক অফিস\nবিভাগীয় পর্যায়ের অফিস\nজেলা পর্যায়ের অফিস\nউপজেলা পর্যায়ের অফিস\nঅফিস নির্বাচন করুন\nআশুগঞ্জ পাওয়ার স্টেশন কোম্পানী লিঃ\nআশুগঞ্জ ফার্টিলাইজার এন্ড কেমিক্যাল কোম্পানী লিঃ(এএফসিসিএল)\nএটলাস বাংলাদেশ লিঃ\nবি-আর পাওয়ারজেন লিঃ (বিআরপিএল)\nবাখরাবাদ গ্যাস ডিস্ট্রিবিউশন কোম্পানী লিমিটেড\nবাংলাদেশ ব্লেড ফ্যাক্টরী লিঃ\nবাংলাদেশ ক্যাবল শিল্প লিমিটেড\nবাংলাদেশ ডাটা সেন্টার কোম্পানি লিমিটেড (বিডিসিসিএল)\nবাংলাদেশ ডাটা সেন্টার এন্ড ডিজাস্টার রিকভারি সাইট লিঃ\nবাংলাদেশ গ্যাস ফিল্ডস্ কোম্পানী লিমিটেড\nবাংলাদেশ ইনসুলেটর এন্ড স্যানিটারীওয়্যার ফ্যাক্টরী লিঃ\nবাংলাদেশ দুগ্ধ উৎপাদনকারী সমবায় ইউনিয়ন লিমিটেড\nবাংলাদেশ মিউনিসিপল ডেভেলপমেন্ট ফান্ড (বিএমডিএফ)\nবাংলাদেশ ওভারসিজ এমপ্লয়মেন্ট অ্যান্ড সার্ভিসেস লিঃ (বোয়েসেল)\nবাংলাদেশ পেট্রোলিয়াম এক্সপ্লোরেশন এন্ড প্রোডাকশন কোম্পানী লিঃ\nবাংলাদেশ পাওয়ার ইকুইপমেন্ট ম্যানুফেকচারিং কোম্পানী লিঃ\nবাংলাদেশ সমবায় ব্যাংক লিমিটেড\nবাংলাদেশ স্যাটেলাইট কোম্পানি লিমিটেড\nবাংলাদেশ সার্ভ"
+ },
+ "board": {
+  "url": "https://boesl.gov.bd/views/latest-news",
+  "title": "সর্বশেষ খবর | বাংলাদেশ ওভারসিজ এমপ্লয়মেন্ট অ্যান্ড সার্ভিসেস লিঃ (বোয়েসেল)",
+  "count": 13,
+  "sample": [
+   {
+    "t": "কন্টেন্টে চলে যান",
+    "h": "https://boesl.gov.bd/views/latest-news#main-content",
+    "bad": true
+   },
+   {
+    "t": "এক্সেসিবিলিটি মেনুতে যান",
+    "h": "https://boesl.gov.bd/views/latest-news#accessibility-card-title",
+    "bad": true
+   },
+   {
+    "t": "বাংলাদেশ জাতীয় তথ্য বাতায়ন",
+    "h": "http://bangladesh.gov.bd/",
+    "bad": false
+   },
+   {
+    "t": "বাংলাদেশ ওভারসিজ এমপ্লয়মেন্ট অ্যান্ড সার্ভিসেস লিঃ (বোয়েসেল)",
+    "h": "https://boesl.gov.bd/",
+    "bad": false
+   },
+   {
+    "t": "বোয়েসেলে স্বাগতম",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922e0be933eb65569e286af",
+    "bad": true
+   },
+   {
+    "t": "ভিশন",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922dc61933eb65569e10092",
+    "bad": true
+   },
+   {
+    "t": "মিশন",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922df68933eb65569e21c7f",
+    "bad": true
+   },
+   {
+    "t": "কার্যক্রম",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922df45933eb65569e20fc1",
+    "bad": true
+   },
+   {
+    "t": "সাংগাঠনিক কাঠামো",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922dcf7933eb65569e12f5e",
+    "bad": true
+   },
+   {
+    "t": "প্রতিষ্ঠানের প্রফাইল",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922dba7933eb65569e0b98d",
+    "bad": true
+   },
+   {
+    "t": "পরিচালনা পর্ষদ",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922de80933eb65569e1b13b",
+    "bad": true
+   },
+   {
+    "t": "কর্মকর্তা/ কর্মচারীবৃন্দ",
+    "h": "https://boesl.gov.bd/pages/officers",
+    "bad": true
+   },
+   {
+    "t": "কর্মকর্তা/ কর্মচারীবৃন্দের দপ্তর ভিত্তিক তালিকা।",
+    "h": "https://boesl.gov.bd/pages/officers",
+    "bad": true
+   },
+   {
+    "t": "বৈদেশিক নিয়োগ",
+    "h": "https://boesl.gov.bd/views/latest-news",
+    "bad": true
+   },
+   {
+    "t": "বৈদেশিক নিয়োগ প্রক্রিয়া",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922df1b933eb65569e1fe54",
+    "bad": true
+   },
+   {
+    "t": "সার্ভিস চার্জ",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922db6a933eb65569e0a043",
+    "bad": true
+   },
+   {
+    "t": "দক্ষিণ কোরিয়ার সার্ভিস চার্জ ফেরত ফর্ম",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922e0e4933eb65569e290bd",
+    "bad": true
+   },
+   {
+    "t": "প্রতিবেদন ও প্রকাশনা",
+    "h": "https://boesl.gov.bd/views/latest-news",
+    "bad": true
+   },
+   {
+    "t": "বার্ষিক প্রতিবেদন ২০২৩",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922de26933eb65569e18939",
+    "bad": true
+   },
+   {
+    "t": "বার্ষিক প্রতিবেদন ২০২২",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922e018933eb65569e25708",
+    "bad": true
+   },
+   {
+    "t": "বার্ষিক প্রতিবেদন ২০২১",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922db57933eb65569e09824",
+    "bad": true
+   },
+   {
+    "t": "বার্ষিক প্রতিবেদন-২০২০",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922df89933eb65569e22a12",
+    "bad": true
+   },
+   {
+    "t": "বার্ষিক প্রতিবেদন-২০১৯",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922de62933eb65569e1a446",
+    "bad": true
+   },
+   {
+    "t": "বার্ষিক প্রতিবেদন ২০১৮-২০১৯",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922dec6933eb65569e1d46a",
+    "bad": true
+   },
+   {
+    "t": "অডিট রিপোর্ট ২০২৪-২০২৫",
+    "h": "https://boesl.gov.bd/pages/static-pages/boesl-audit-report-2024-2025-wui109-699a7e203d7313fa0e6492de",
+    "bad": true
+   },
+   {
+    "t": "অডিট রিপোর্ট ২০২৩-২০২৪",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922dce0933eb65569e1282e",
+    "bad": true
+   },
+   {
+    "t": "অডিট রিপোর্ট ২০২০-২০২১",
+    "h": "https://boesl.gov.bd/pages/publications/6922daa181fc96cef9eb6c05",
+    "bad": true
+   },
+   {
+    "t": "অডিট রিপোর্ট ২০২১-২০২২",
+    "h": "https://boesl.gov.bd/pages/publications/6922d9ef81fc96cef9eb46af",
+    "bad": true
+   },
+   {
+    "t": "বার্ষিক প্রতিবেদন ২০২৫",
+    "h": "https://boesl.gov.bd/pages/static-pages/6a5df8831f8fc97be14dd212",
+    "bad": true
+   },
+   {
+    "t": "বার্ষিক প্রতিবেদন ২০২৪",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922dec3933eb65569e1d2ee",
+    "bad": true
+   },
+   {
+    "t": "গ্যালারি",
+    "h": "https://boesl.gov.bd/views/latest-news",
+    "bad": true
+   },
+   {
+    "t": "ফটো গ্যালারি",
+    "h": "https://boesl.gov.bd/pages/photo-galleries",
+    "bad": true
+   },
+   {
+    "t": "ভিডিও গ্যালারি",
+    "h": "https://www.youtube.com/@BOESLOfficial",
+    "bad": true
+   },
+   {
+    "t": "সকল আদেশ",
+    "h": "https://boesl.gov.bd/pages/go-ultimates?filters=%7B%22order%22%3A%20%226922d2bf81fc96cef9e9a459%22%7D",
+    "bad": true
+   },
+   {
+    "t": "যোগাযোগের ঠিকানা",
+    "h": "http://www.boesl.org.bd/ContactUs.aspx",
+    "bad": true
+   },
+   {
+    "t": "অফিসের ঠিকানা",
+    "h": "https://boesl.gov.bd/pages/static-pages/6922dcac933eb65569e1184f",
+    "bad": true
+   },
+   {
+    "t": "সরকারিভাবে জর্ডানস্থ বিভিন্ন গার্মেন্টস কোম্পানীতে দক্ষ কর্মী নিয়োগ বিজ্ঞপ্তি",
+    "h": "https://boesl.gov.bd/pages/reports/6922df90dbfbab28ce06ff13",
+    "bad": false
+   },
+   {
+    "t": "সরকারিভাবে ব্রুনাইয়ের বিভিন্ন কোম্পানিতে কর্মী নিয়োগের বিজ্ঞপ্তি",
+    "h": "https://boesl.gov.bd/pages/reports/6922dc02dbfbab28ce05cdfa",
+    "bad": false
+   },
+   {
+    "t": "ইপিএস-এর আওতায় কমিটেড (Committed) প্রার্থীদের তালিকা ও ফ্লাইট সংক্রান্ত তথ্য",
+    "h": "https://boesl.gov.bd/pages/reports/6a94f1f4180aff5b5539c584",
+    "bad": false
+   },
+   {
+    "t": "Job offer notice file update on 17.11.2026",
+    "h": "https://boesl.gov.bd/pages/reports/69c65d08cfb39a5db518af82",
+    "bad": false
+   },
+   {
+    "t": "কারিগরি ত্রুটির কারণে brms.boesl.gov.bd অনলাইন পোর্টালের মাধ্যমে সকল চাকুরির আবে",
+    "h": "https://boesl.gov.bd/pages/reports/6acb6d6c582bde01e1abfe45",
+    "bad": false
+   },
+   {
+    "t": "বোয়েসেলের মাধ্যমে জাপানে নার্সিং কেয়ারগিভার পদে দক্ষ মহিলা টেকনিক্যাল ইন্টার্ন ন",
+    "h": "https://boesl.gov.bd/pages/reports/6a980ce3421c77058d19e4a6",
+    "bad": false
+   },
+   {
+    "t": "Arrival Report for Committed Worker",
+    "h": "https://boesl.gov.bd/pages/reports/6a94ebbf2adbdef9eaecb95c",
+    "bad": false
+   },
+   {
+    "t": "দক্ষিণ কোরিয়ায় চাকরি প্রত্যাশীদের ২০২৭ সালের শেষার্ধে রোস্টারভুক্তির লক্ষ্যে আগ্",
+    "h": "https://boesl.gov.bd/pages/reports/6a448a0b7f5592e626670ffe",
+    "bad": false
+   },
+   {
+    "t": "সতর্কীকরণ নোটিশ",
+    "h": "https://boesl.gov.bd/pages/reports/6a3a5ae950a67beec2139958",
+    "bad": false
+   },
+   {
+    "t": "দক্ষিণ কোরিয়ায় বিভিন্ন কলেজ/বিশ্ববিদ্যালয় ল্যাঙ্গুয়েজ কোর্স, এ্যাসোসিয়েট, অনার্স",
+    "h": "https://boesl.gov.bd/pages/reports/6a31291e1c347e8804d5a622",
+    "bad": false
+   },
+   {
+    "t": "স্ক্রিন রিডার ডাউনলোড করুন",
+    "h": "https://www.nvaccess.org/files/nvda/releases/2020.4/nvda_2020.4.exe",
+    "bad": false
+   },
+   {
+    "t": "অবস্থান",
+    "h": "https://goo.gl/maps/Qu1qvdkD5KZtAzkn6",
+    "bad": true
+   }
+  ],
+  "body": "কন্টেন্টে চলে যান\nএক্সেসিবিলিটি মেনুতে যান\nবাংলাদেশ জাতীয় তথ্য বাতায়ন\nঅফিসের ধরণ নির্বাচন করুন\nস্বায়ত্তশাসিত\nমন্ত্রণালয়\nমন্ত্রণালয় বিভাগ\nঅধিদপ্তর\nকর্পোরেশন\nকমিশন\nকোম্পানি\nকর্তৃপক্ষ/অথরিটি\nএজেন্সী\nকাউন্সিল\nট্রাস্ট\nজাদুঘর\nফাউন্ডেশন\nএকাডেমি\nদপ্তর/সংস্থা\nবোর্ড\nইনস্টিটিউট\nফেডারেশন\nব্যুরো\nএডুকেশন বোর্ড\nব্যাংক / বীমা / আর্থিক প্রতিষ্ঠান\nবিভাগীয় পোর্টাল\nজেলা পোর্টাল\nপৌরসভা পোর্টাল\nউপজেলা পোর্টাল\nইউনিয়ন পোর্টাল\nরেজাল্ট\nপ্রকল্প/কর্মসূচী\nবিদেশী দূতাবাস/মিশন\nজেলা পরিষদ পোর্টাল\nসিটি কর্পোরেশন পোর্টাল\nপ্রশিক্ষণ\nশিক্ষা প্রতিষ্ঠান\nসরকারি মাঠ পর্যায়ের অফিস\nঅন্যান্য\nঅফিস স্তর নির্বাচন করুন\nপ্রধান কার্যালয়\nআঞ্চলিক অফিস\nবিভাগীয় পর্যায়ের অফিস\nজেলা পর্যায়ের অফিস\nউপজেলা পর্যায়ের অফিস\nঅফিস নির্বাচন করুন\nআশুগঞ্জ পাওয়ার স্টেশন কোম্পানী লিঃ\nআশুগঞ্জ ফার্টিলাইজার এন্ড কেমিক্যাল কোম্পানী লিঃ(এএফসিসিএল)\nএটলাস বাংলাদেশ লিঃ\nবি-আর পাওয়ারজেন লিঃ (বিআরপিএল)\nবাখরাবাদ গ্যাস ডিস্ট্রিবিউশন কোম্পানী লিমিটেড\nবাংলাদেশ ব্লেড ফ্যাক্টরী লিঃ\nবাংলাদেশ ক্যাবল শিল্প লিমিটেড\nবাংলাদেশ ডাটা সেন্টার কোম্পানি লিমিটেড (বিডিসিসিএল)\nবাংলাদেশ ডাটা সেন্টার এন্ড ডিজাস্টার রিকভারি সাইট লিঃ\nবাংলাদেশ গ্যাস ফিল্ডস্ কোম্পানী লিমিটেড\nবাংলাদেশ ইনসুলেটর এন্ড স্যানিটারীওয়্যার ফ্যাক্টরী লিঃ\nবাংলাদেশ দুগ্ধ উৎপাদনকারী সমবায় ইউনিয়ন লিমিটেড\nবাংলাদেশ মিউনিসিপল ডেভেলপমেন্ট ফান্ড (বিএমডিএফ)\nবাংলাদেশ ওভারসিজ এমপ্লয়মেন্ট অ্যান্ড সার্ভিসেস লিঃ (বোয়েসেল)\nবাংলাদেশ পেট্রোলিয়াম এক্সপ্লোরেশন এন্ড প্রোডাকশন কোম্পানী লিঃ\nবাংলাদেশ পাওয়ার ইকুইপমেন্ট ম্যানুফেকচারিং কোম্পানী লিঃ\nবাংলাদেশ সমবায় ব্যাংক লিমিটেড\nবাংলাদেশ স্যাটেলাইট কোম্পানি লিমিটেড\nবাংলাদেশ সার্ভ"
+ }
+}
